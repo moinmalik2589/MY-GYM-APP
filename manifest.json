@@ -1,0 +1,23 @@
+{
+  "name": "Moin Malik Gym Tracker",
+  "short_name": "Moin Gym",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#eefbf3",
+  "theme_color": "#0a6b33",
+  "description": "Gym, food and 90-day transformation tracker",
+  "icons": [
+    {
+      "src": "assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

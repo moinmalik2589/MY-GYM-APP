@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#eefbf3">
+  <title>Moin Malik Gym Tracker</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="assets/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/themes.css">
+</head>
+<body data-theme="light" data-accent="green">
+
+<header class="app-header">
+  <div>
+    <h1>MOIN MALIK</h1>
+    <div id="clock" class="clock"></div>
+    <div id="weekday" class="weekday"></div>
+  </div>
+  <button id="menuBtn" class="header-menu" aria-label="Open menu">☰</button>
+</header>
+
+<div id="dailyQuote" class="motivation-banner home-only"></div>
+
+<aside id="drawer" class="drawer">
+  <button id="closeDrawer" class="drawer-close">×</button>
+  <h3>Gym Tracker</h3>
+  <button data-page="homePage">🏠 Home</button>
+  <button data-page="workoutPage">🏋️ Workout</button>
+  <button data-page="foodPage">🍽️ Food</button>
+  <button data-page="progressPage">📈 Progress</button>
+  <button data-page="exercisePage">💪 Exercise Progress</button>
+  <button data-page="journeyPage">🗺️ 90-Day Journey</button>
+  <button data-page="profilePage">👤 Profile</button>
+  <button data-page="settingsPage">⚙️ Settings</button>
+</aside>
+<div id="drawerOverlay" class="overlay"></div>
+
+<main>
+<section id="homePage" class="page active">
+<div class="date-controls">
+    <input id="selectedDate" type="date">
+    <div class="date-buttons">
+      <button id="prevDay">← Prev</button>
+      <button id="nextDay">Next →</button>
+    </div>
+  </div>
+
+  <article class="main-card">
+    <div class="page-title">
+      <h2>Daily Gym Progress</h2>
+      <p>Complete your workout, record weight and repetitions, and move on.</p>
+    </div>
+
+    <div class="ring-wrap">
+      <div id="dailyRing" class="progress-ring">
+        <div class="progress-inner">
+          <strong id="dailyPercent">0%</strong>
+          <span>Completed</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="fastNotice" class="fast-notice hidden">🌙 Friday Fast Mode — gym is scheduled after Iftar.</div>
+
+    <div class="summary-grid">
+      <div><span>Workout</span><b id="workoutName">Upper A</b></div>
+      <div><span>Gym Time</span><b id="gymTimeDisplay">7:45 AM</b></div>
+      <div><span>Journey</span><b id="dayNumber">Before Start</b></div>
+      <div><span>Workout Streak</span><b id="workoutStreakDisplay">🔥 0</b></div>
+    </div>
+
+    <div id="homeExerciseCards" class="exercise-card-list"></div>
+
+    <div class="home-habits">
+      <label><input id="stepGoal" type="checkbox"> 👟 8,000+ steps</label>
+      <label><input id="waterGoal" type="checkbox"> 💧 3+ L water</label>
+      <label><input id="proteinGoal" type="checkbox"> 🥩 Protein-focused meals</label>
+      <label><input id="sleepGoal" type="checkbox"> 😴 7+ h total sleep</label>
+    </div>
+  </article>
+</section>
+
+<section id="workoutPage" class="page">
+  <article class="main-card">
+    <div class="page-title workout-title-row">
+      <div><h2>Workout Plan</h2><p>Review the full weekly training plan.</p></div>
+      <button id="togglePlanEdit" class="primary-btn compact-btn">Edit</button>
+    </div>
+    <div id="workoutView"></div>
+    <div id="planEditor" class="hidden"></div>
+    <button id="restorePlan" class="secondary-btn full hidden">Restore Default Plan</button>
+  </article>
+</section>
+
+<section id="foodPage" class="page">
+  <article class="main-card">
+    <div class="page-title"><h2>Today's Food</h2><p id="foodDateLabel"></p></div>
+    <div class="food-note">Simple portions instead of calorie counting. Follow the primary meal; use the fallback only when the primary food is unavailable.</div>
+    <div id="foodMeals" class="food-list"></div>
+  </article>
+</section>
+
+<section id="progressPage" class="page">
+  <article class="main-card">
+    <div class="page-title"><h2>Monthly Progress</h2><p>Choose whether future scheduled days should count.</p></div>
+    <div class="control-row single-control">
+      <input id="monthPicker" type="month">
+    </div>
+
+    <div class="ring-wrap">
+      <button id="monthlyRing" class="progress-ring ring-button" aria-label="Toggle progress mode">
+        <div class="progress-inner"><strong id="monthlyPercent">0%</strong><span id="monthlyModeLabel">Up to Today</span></div>
+      </button>
+    </div>
+    <p class="ring-hint">Tap the ring to switch calculation mode</p>
+    <div class="chart-box"><canvas id="monthlyChart" width="900" height="300"></canvas></div>
+    <p id="monthlySummary" class="center-muted"></p>
+
+    <div class="table-scroll">
+      <table class="progress-table">
+        <thead><tr><th>Date</th><th>Day</th><th>Workout</th><th>Completion</th><th>Status</th></tr></thead>
+        <tbody id="monthlyBody"></tbody>
+      </table>
+    </div>
+
+    <div class="section-divider"></div>
+    <div class="page-title compact"><h2>Body Progress</h2></div>
+    <button id="addCheckin" class="primary-btn">+ Add Body Check-in</button>
+
+    <div class="body-summary">
+      <div><span>Start Weight</span><b>90.5 kg</b></div>
+      <div><span>Current Weight</span><b id="currentWeight">90.5 kg</b></div>
+      <div><span>Start Waist</span><b>46.9 in</b></div>
+      <div><span>Current Waist</span><b id="currentWaist">46.9 in</b></div>
+    </div>
+
+    <div class="chart-box"><canvas id="weightChart" width="900" height="300"></canvas></div>
+
+    <div class="table-scroll">
+      <table class="progress-table">
+        <thead><tr><th>Date</th><th>Weight</th><th>Waist</th><th>Lower Belly</th><th>Chest</th><th>Hip</th><th>Biceps</th><th>Thigh</th></tr></thead>
+        <tbody id="bodyHistory"></tbody>
+      </table>
+    </div>
+  </article>
+</section>
+
+<section id="exercisePage" class="page">
+  <article class="main-card">
+    <div class="page-title"><h2>Exercise Progress</h2><p>Weekly, monthly, yearly, or all-time history.</p></div>
+
+    <div class="exercise-filters">
+      <label>Exercise<select id="exerciseSelect"></select></label>
+      <label>Period<select id="periodSelect">
+        <option value="weekly">Weekly</option>
+        <option value="monthly" selected>Monthly</option>
+        <option value="yearly">Yearly</option>
+        <option value="all">All Time</option>
+      </select></label>
+    </div>
+
+    <div id="periodSpecificControls" class="period-specific"></div>
+
+    
+
+    <div class="exercise-progress-grid">
+      <div class="ring-wrap">
+        <button id="exerciseRing" class="progress-ring ring-button" aria-label="Toggle progress mode">
+          <div class="progress-inner"><strong id="exercisePercent">0%</strong><span id="exerciseModeLabel">Up to Today</span></div>
+        </button>
+      </div>
+      <div class="streak-panel">
+        <div>Current: <b id="exStreak">🔥 0</b></div>
+        <div>🏆 Highest: <b id="exBest">0</b></div>
+        <div>🏋️ Best Load: <b id="exBestLoad">-</b></div>
+      </div>
+    </div>
+
+    <p class="ring-hint">Tap the ring to switch calculation mode</p><p id="exerciseSummary" class="center-muted"></p><div class="chart-box"><canvas id="exerciseChart" width="900" height="300"></canvas></div>
+
+    <div class="table-scroll">
+      <table class="progress-table">
+        <thead><tr><th>Date</th><th>Day</th><th>Status</th><th>Weight</th><th>Repetitions</th><th>Streak</th></tr></thead>
+        <tbody id="exerciseHistory"></tbody>
+      </table>
+    </div>
+  </article>
+</section>
+
+<section id="journeyPage" class="page">
+  <article class="main-card">
+    <div class="page-title"><h2>90-Day Journey</h2><p>Exercise streaks remain independent of journey resets.</p></div>
+    <div class="journey-summary">
+      <div><span>Start</span><b id="jStart"></b></div>
+      <div><span>Current</span><b id="jCurrent"></b></div>
+      <div><span>End</span><b id="jEnd"></b></div>
+    </div>
+    <div id="journeyMap" class="journey-map"></div>
+    <button id="resetJourney" class="danger-btn full">Reset / Restart 90 Days</button>
+  </article>
+</section>
+
+<section id="profilePage" class="page">
+  <article class="main-card">
+    <div class="profile-card">
+      <div class="profile-avatar">M</div>
+      <div><h2>Moin Malik</h2><p>90-Day Gym Transformation</p></div>
+    </div>
+    <div class="profile-stats">
+      <div><span>Start Weight</span><b>90.5 kg</b></div>
+      <div><span>Start Waist</span><b>46.9 in</b></div>
+      <div><span>Target</span><b>&lt; 70 kg</b></div>
+      <div><span>Gym Time</span><b id="profileGymTime">7:45 AM</b></div>
+    </div>
+    <button data-page="settingsPage" class="secondary-btn full">Open Settings</button>
+  </article>
+</section>
+
+<section id="settingsPage" class="page">
+  <article class="main-card">
+    <div class="page-title"><h2>Settings</h2></div>
+    <div class="settings-list">
+      <label class="settings-row"><div><b>Friday Fast Mode</b><span>Friday gym shows as after Iftar.</span></div><input id="fridayFastToggle" type="checkbox"></label>
+      <label class="settings-row"><div><b>Normal Gym Time</b><span>Default non-fasting gym time.</span></div><input id="gymTimeSetting" type="time"></label>
+      <label class="settings-row"><div><b>Theme</b><span>Choose a complete visual style.</span></div><select id="themePreset"><option value="light">Light</option><option value="dark">Dark</option><option value="colorful">Colorful</option><option value="multicolor">Multicolor</option></select></label>
+      <label class="settings-row"><div><b>Accent</b><span>Main app color.</span></div><select id="accentColor"><option value="green">Green</option><option value="blue">Blue</option><option value="purple">Purple</option><option value="orange">Orange</option><option value="pink">Pink</option><option value="teal">Teal</option></select></label>
+<div class="settings-row"><div><b>Install App</b><span>Install this tracker on your phone.</span></div><button id="installBtn" class="primary-btn">Install</button></div>
+      <div class="settings-row"><div><b>Export Progress</b><span>Backup workout + body data.</span></div><button id="exportBtn" class="secondary-btn">Export</button></div>
+      <label class="settings-row"><div><b>Import Progress</b><span>Restore an exported JSON file.</span></div><input id="importFile" type="file" accept=".json"></label>
+    </div>
+  </article>
+</section>
+</main>
+
+<nav class="bottom-nav">
+  <button class="bottom-item" data-page="workoutPage"><span>🏋️</span><small>Workout</small></button>
+  <button class="bottom-item" data-page="foodPage"><span>🍽️</span><small>Food</small></button>
+  <button class="bottom-item active home-nav-item" data-page="homePage"><span>⌂</span><small>Home</small></button>
+  <button class="bottom-item" data-page="progressPage"><span>⌁</span><small>Progress</small></button>
+  <button class="bottom-item" data-page="profilePage"><span>◉</span><small>Profile</small></button>
+</nav>
+
+<div id="modalBg" class="modal-bg hidden"><div id="modal" class="modal"></div></div>
+<div id="pickerOverlay" class="picker-overlay hidden">
+      <div id="pickerSheet" class="picker-sheet"></div>
+    </div>
+    <div id="toast" class="toast"></div>
+
+<script src="js/config.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/streak.js"></script>
+<script src="js/progress.js"></script>
+<script src="js/food.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
