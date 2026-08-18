@@ -1,6 +1,7 @@
 /* Firebase web configuration.
    Firebase Console -> Project settings -> Your apps -> Web app -> SDK setup and configuration.
    Paste ONLY the public Web App config below. Never place Admin SDK/service-account secrets here. */
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: "AIzaSyD0Rgb-fmpvy0l9QJX3m_Lw0BQdjnmB93c",
   authDomain: "moin-malik-gym-tracker.firebaseapp.com",
