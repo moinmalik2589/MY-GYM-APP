@@ -69,23 +69,75 @@ function mixHex(a,b,weight=.5){
   const h=n=>Math.round(n).toString(16).padStart(2,"0");
   return `#${h(x.r+(y.r-x.r)*w)}${h(x.g+(y.g-x.g)*w)}${h(x.b+(y.b-x.b)*w)}`;
 }
-function applyTheme(){
-  const theme=state.themeColor||"#eefbf3",accent=state.accent||"#0a6b33";
-  const rgb=hexRgb(theme),luma=(.2126*rgb.r+.7152*rgb.g+.0722*rgb.b)/255,isDark=luma<.48;
-  document.body.dataset.theme=isDark?"dark":"light";
-  document.body.style.setProperty("--accent",accent);
-  document.body.style.setProperty("--accent2",mixHex(accent,isDark?"#ffffff":"#000000",isDark?.22:.12));
-  document.body.style.setProperty("--bg",theme);
-  document.body.style.setProperty("--surface",mixHex(theme,isDark?"#ffffff":"#ffffff",isDark?.08:.55));
-  document.body.style.setProperty("--card",mixHex(theme,isDark?"#ffffff":"#ffffff",isDark?.10:.78));
-  document.body.style.setProperty("--row",mixHex(theme,isDark?"#ffffff":"#ffffff",isDark?.12:.84));
-  document.body.style.setProperty("--rowAlt",mixHex(theme,isDark?"#ffffff":"#ffffff",isDark?.16:.68));
-  document.body.style.setProperty("--text",isDark?"#f5f7fb":"#161616");
-  document.body.style.setProperty("--muted",isDark?"#b6c0cc":"#687386");
-  document.body.style.setProperty("--line",mixHex(theme,isDark?"#ffffff":"#000000",isDark?.22:.10));
-  const tc=$("#themeColor"),ac=$("#accentColor");if(tc)tc.value=theme;if(ac)ac.value=accent;
-  const meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.content=theme;
+function appearanceProfile(){
+  const themes={
+    classic:{bg:"#eefbf3",card:"#ffffff",text:"#161616",muted:"#687386",line:"#e5ece8",row:"#ffffff",rowAlt:"#f8fbf9"},
+    light:{bg:"#f6f7f9",card:"#ffffff",text:"#17191d",muted:"#687386",line:"#e2e6ea",row:"#ffffff",rowAlt:"#f7f9fb"},
+    dark:{bg:"#07121f",card:"#0e1b2b",text:"#f4f8fd",muted:"#91a4bb",line:"#20364d",row:"#0e1b2b",rowAlt:"#13253a"},
+    midnight:{bg:"#090b18",card:"#12162a",text:"#f7f7fb",muted:"#a0a8bf",line:"#292f4d",row:"#12162a",rowAlt:"#191f37"},
+    ocean:{bg:"#e9f8fb",card:"#ffffff",text:"#12323a",muted:"#5f7d84",line:"#cfe7eb",row:"#ffffff",rowAlt:"#f3fbfc"},
+    warm:{bg:"#fff6e8",card:"#fffdf8",text:"#352617",muted:"#806f5e",line:"#eadcc8",row:"#fffdf8",rowAlt:"#fff9ef"},
+    rose:{bg:"#fff0f4",card:"#fffafb",text:"#382029",muted:"#866873",line:"#efd5de",row:"#fffafb",rowAlt:"#fff5f8"}
+  };
+  return themes[state.themePreset]||themes.classic;
 }
+
+function applyTheme(){
+  const themePreset=state.themePreset||"classic";
+  const accentPreset=state.accentPreset||"green";
+  const accentMap={green:"#0a6b33",blue:"#075fc7",purple:"#6844cc",orange:"#c75c00",pink:"#b92968",teal:"#087e79",red:"#b4232d",gold:"#a66b00"};
+  const accent=accentPreset==="custom"?(state.accent||"#0a6b33"):(accentMap[accentPreset]||accentMap.green);
+
+  document.body.dataset.theme=themePreset;
+  document.body.dataset.accent=accentPreset;
+  document.body.style.setProperty("--accent",accent);
+
+  // Multicolor keeps its gradient background while the other themes use a color palette.
+  if(themePreset==="multicolor"){
+    document.body.style.removeProperty("--bg");
+    document.body.style.removeProperty("--card");
+    document.body.style.removeProperty("--text");
+    document.body.style.removeProperty("--muted");
+    document.body.style.removeProperty("--line");
+    document.body.style.removeProperty("--row");
+    document.body.style.removeProperty("--rowAlt");
+    document.body.style.setProperty("--accent2",mixHex(accent,"#ffffff",.18));
+  }else if(themePreset==="custom"){
+    const theme=state.themeColor||"#eefbf3",rgb=hexRgb(theme),luma=(.2126*rgb.r+.7152*rgb.g+.0722*rgb.b)/255,isDark=luma<.48;
+    document.body.style.setProperty("--bg",theme);
+    document.body.style.setProperty("--card",mixHex(theme,"#ffffff",isDark?.10:.78));
+    document.body.style.setProperty("--row",mixHex(theme,"#ffffff",isDark?.12:.84));
+    document.body.style.setProperty("--rowAlt",mixHex(theme,"#ffffff",isDark?.16:.68));
+    document.body.style.setProperty("--text",isDark?"#f5f7fb":"#161616");
+    document.body.style.setProperty("--muted",isDark?"#b6c0cc":"#687386");
+    document.body.style.setProperty("--line",mixHex(theme,isDark?"#ffffff":"#000000",isDark?.22:.10));
+    document.body.style.setProperty("--accent2",mixHex(accent,isDark?"#ffffff":"#000000",isDark?.22:.12));
+  }else{
+    const palette=appearanceProfile();
+    Object.entries(palette).forEach(([key,value])=>document.body.style.setProperty(`--${key}`,value));
+    const isDark=["dark","midnight"].includes(themePreset);
+    document.body.style.setProperty("--accent2",mixHex(accent,isDark?"#ffffff":"#000000",isDark?.22:.12));
+  }
+
+  state.accent=accent;
+  state.theme=themePreset;
+  const themeSelect=$("#themePreset"),accentSelect=$("#accentPreset"),tc=$("#themeColor"),ac=$("#accentColor");
+  if(themeSelect)themeSelect.value=themePreset;
+  if(accentSelect)accentSelect.value=accentPreset;
+  if(tc)tc.value=state.themeColor||"#eefbf3";
+  if(ac)ac.value=state.accent||"#0a6b33";
+  $("#themeCustomPicker")?.classList.toggle("hidden",themePreset!=="custom");
+  $("#accentCustomPicker")?.classList.toggle("hidden",accentPreset!=="custom");
+
+  const quick=$("#quickThemeToggle");
+  if(quick){
+    const dark=["dark","midnight"].includes(themePreset)||(themePreset==="custom"&&((.2126*hexRgb(state.themeColor||"#eefbf3").r+.7152*hexRgb(state.themeColor||"#eefbf3").g+.0722*hexRgb(state.themeColor||"#eefbf3").b)/255<.48));
+    quick.textContent=dark?"☀":"☾";
+    quick.setAttribute("aria-label",dark?"Switch to light theme":"Switch to dark theme");
+  }
+  const meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.content=themePreset==="custom"?(state.themeColor||"#eefbf3"):(appearanceProfile().bg||"#eefbf3");
+}
+
 
 function navigate(pageId){
   setActivePage(pageId);
@@ -546,7 +598,10 @@ function bindLongPress(element,name){
 function renderHome(){
   const date=$("#selectedDate").value;
   const profile=(typeof getUserProfile==="function"?getUserProfile():null)||state.userProfile||{};
-  const homeName=$("#homeUserName");if(homeName)homeName.textContent=profile.name?`Welcome, ${profile.name}`:"Welcome";
+  const displayName=profile.name||"User";
+  const homeName=$("#homeUserName"),headerName=$("#headerUserName");
+  if(homeName)homeName.textContent=`Welcome, ${displayName}`;
+  if(headerName)headerName.textContent=displayName.toUpperCase();
   const plan=workoutForDate(date),data=dayData(date),percent=dayCompletion(date);
 
   $("#dailyPercent").textContent=`${percent}%`;
@@ -912,14 +967,19 @@ function renderProfile(){
   $("#profileGymTime").textContent=formatClockTime(state.gymTime);
   const profile=(typeof getUserProfile==="function"?getUserProfile():null)||state.userProfile||{};
   const latest=(state.measurements||[])[0]||{};
-  const name=profile.name||"Moin Malik";
+  const name=profile.name||"User";
   const avatar=$("#profileAvatar"),nameEl=$("#profileNameDisplay"),weightEl=$("#profileStartWeight"),waistEl=$("#profileStartWaist");
   if(avatar)avatar.textContent=(name.trim()[0]||"M").toUpperCase();
   if(nameEl)nameEl.textContent=name;
   if(weightEl)weightEl.textContent=`${profile.weight||latest.weight||CONFIG.bodyStart.weight} kg`;
   if(waistEl)waistEl.textContent=`${profile.waist||latest.waist||CONFIG.bodyStart.waist} in`;
 }
-function renderSettings(){updateInstallVisibility();$("#fridayFastToggle").checked=state.fridayFast;$("#gymTimeSetting").value=state.gymTime;const tc=$("#themeColor"),ac=$("#accentColor");if(tc)tc.value=state.themeColor||"#eefbf3";if(ac)ac.value=state.accent||"#0a6b33";}
+function renderSettings(){
+  updateInstallVisibility();
+  $("#fridayFastToggle").checked=state.fridayFast;
+  $("#gymTimeSetting").value=state.gymTime;
+  applyTheme();
+}
 
 
 function updateInstallVisibility(){
@@ -981,8 +1041,16 @@ function wireEvents(){
   $("#addCheckin").onclick=openBodyCheckin;$("#resetJourney").onclick=openJourneyReset;
 $("#fridayFastToggle").onchange=e=>{state.fridayFast=e.target.checked;saveState();renderHome();toast(state.fridayFast?"Friday Fast Mode ON":"Friday Fast Mode OFF");};
   $("#gymTimeSetting").onchange=e=>{state.gymTime=e.target.value||CONFIG.normalGymTime;saveState();renderHome();renderProfile();toast("Gym time updated");};
-  $("#themeColor").oninput=e=>{state.theme="custom";state.themeColor=e.target.value;saveState();applyTheme();drawWeightChart();};
-  $("#accentColor").oninput=e=>{state.accent=e.target.value;saveState();applyTheme();drawWeightChart();};
+  // Appearance controls save the user's preset or free-form color choice immediately.
+  $("#themePreset").onchange=e=>{state.themePreset=e.target.value;saveState();applyTheme();drawWeightChart();};
+  $("#accentPreset").onchange=e=>{state.accentPreset=e.target.value;saveState();applyTheme();drawWeightChart();};
+  $("#themeColor").oninput=e=>{state.themePreset="custom";state.themeColor=e.target.value;saveState();applyTheme();drawWeightChart();};
+  $("#accentColor").oninput=e=>{state.accentPreset="custom";state.accent=e.target.value;saveState();applyTheme();drawWeightChart();};
+  $("#quickThemeToggle").onclick=()=>{
+    const dark=["dark","midnight"].includes(state.themePreset);
+    state.themePreset=dark?"light":"dark";
+    saveState();applyTheme();drawWeightChart();
+  };
   $("#logoutBtn").onclick=()=>{if(typeof logoutUser==="function")logoutUser();};
 
   $("#installBtn").onclick=installApp;$("#exportBtn").onclick=exportData;

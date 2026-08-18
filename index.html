@@ -79,11 +79,14 @@
 
 <header class="app-header">
   <div>
-    <h1>MOIN MALIK</h1>
+    <h1 id="headerUserName">USER</h1>
     <div id="clock" class="clock"></div>
     <div id="weekday" class="weekday"></div>
   </div>
-  <button id="menuBtn" class="header-menu" aria-label="Open menu">☰</button>
+  <div class="header-actions">
+    <button id="quickThemeToggle" class="quick-theme-toggle" type="button" aria-label="Switch light and dark theme" title="Switch light / dark">☾</button>
+    <button id="menuBtn" class="header-menu" aria-label="Open menu">☰</button>
+  </div>
 </header>
 
 <div id="dailyQuote" class="motivation-banner home-only"></div>
@@ -272,7 +275,7 @@
   <article class="main-card">
     <div class="profile-card">
       <div class="profile-avatar" id="profileAvatar">M</div>
-      <div><h2 id="profileNameDisplay">Moin Malik</h2><p>90-Day Gym Transformation</p></div>
+      <div><h2 id="profileNameDisplay">User</h2><p>90-Day Gym Transformation</p></div>
     </div>
     <div class="profile-stats">
       <div><span>Start Weight</span><b id="profileStartWeight">90.5 kg</b></div>
@@ -290,8 +293,40 @@
     <div class="settings-list">
       <label class="settings-row"><div><b>Friday Fast Mode</b><span>Friday gym shows as after Iftar.</span></div><input id="fridayFastToggle" type="checkbox"></label>
       <label class="settings-row"><div><b>Normal Gym Time</b><span>Default non-fasting gym time.</span></div><input id="gymTimeSetting" type="time"></label>
-      <label class="settings-row"><div><b>Theme Color</b><span>Choose any app background color.</span></div><span class="color-ring"><input id="themeColor" type="color" value="#eefbf3" aria-label="Theme color"></span></label>
-      <label class="settings-row"><div><b>Accent Color</b><span>Choose any accent color.</span></div><span class="color-ring"><input id="accentColor" type="color" value="#0a6b33" aria-label="Accent color"></span></label>
+      <div class="settings-row appearance-setting">
+        <div><b>Theme</b><span>Choose a ready-made theme or create your own.</span></div>
+        <div class="appearance-control">
+          <select id="themePreset" aria-label="Theme preset">
+            <option value="classic">Classic Green</option>
+            <option value="light">Light</option>
+            <option value="dark">Dark</option>
+            <option value="multicolor">Multicolor</option>
+            <option value="midnight">Midnight</option>
+            <option value="ocean">Ocean</option>
+            <option value="warm">Warm</option>
+            <option value="rose">Rose</option>
+            <option value="custom">Custom</option>
+          </select>
+          <span id="themeCustomPicker" class="color-ring custom-color-picker hidden" title="Custom theme color"><input id="themeColor" type="color" value="#eefbf3" aria-label="Custom theme color"></span>
+        </div>
+      </div>
+      <div class="settings-row appearance-setting">
+        <div><b>Accent Color</b><span>Choose a preset accent or pick any custom color.</span></div>
+        <div class="appearance-control">
+          <select id="accentPreset" aria-label="Accent preset">
+            <option value="green">Classic Green</option>
+            <option value="blue">Blue</option>
+            <option value="purple">Purple</option>
+            <option value="orange">Orange</option>
+            <option value="pink">Pink</option>
+            <option value="teal">Teal</option>
+            <option value="red">Red</option>
+            <option value="gold">Gold</option>
+            <option value="custom">Custom</option>
+          </select>
+          <span id="accentCustomPicker" class="color-ring custom-color-picker hidden" title="Custom accent color"><input id="accentColor" type="color" value="#0a6b33" aria-label="Custom accent color"></span>
+        </div>
+      </div>
 <div class="settings-row"><div><b>Install App</b><span>Install this tracker on your phone.</span></div><button id="installBtn" class="primary-btn">Install</button></div>
       <div class="settings-row"><div><b>Account</b><span>Sign out of this Firebase account.</span></div><button id="logoutBtn" class="secondary-btn">Logout</button></div>
       <div class="settings-row"><div><b>Export Progress</b><span>Backup workout + body data.</span></div><button id="exportBtn" class="secondary-btn">Export</button></div>

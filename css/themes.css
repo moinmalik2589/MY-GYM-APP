@@ -9,7 +9,7 @@ body[data-theme="multicolor"] .home-habits label:nth-child(1){color:#15803d;bord
 body[data-theme="multicolor"] .meal-card:nth-child(1){border-left:5px solid #f59e0b}body[data-theme="multicolor"] .meal-card:nth-child(2){border-left:5px solid #22c55e}body[data-theme="multicolor"] .meal-card:nth-child(3){border-left:5px solid #3b82f6}body[data-theme="multicolor"] .meal-card:nth-child(4){border-left:5px solid #ec4899}
 
 
-/* V12 navigation colors */
+/* Navigation colors */
 body[data-theme="multicolor"] .bottom-item:nth-child(1){color:#7e22ce}
 body[data-theme="multicolor"] .bottom-item:nth-child(2){color:#ea580c}
 body[data-theme="multicolor"] .bottom-item:nth-child(3){color:#15803d}
@@ -19,3 +19,7 @@ body[data-theme="multicolor"] .bottom-item.active{
   background:rgba(255,255,255,.55);
   box-shadow:inset 0 0 0 1px rgba(255,255,255,.7),0 8px 18px rgba(0,0,0,.08);
 }
+
+/* Accent presets share the same components and differ only in their key colors. */
+body[data-accent="red"]{--accent:#b4232d;--accent2:#e34b55}
+body[data-accent="gold"]{--accent:#a66b00;--accent2:#d89b28}

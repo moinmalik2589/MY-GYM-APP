@@ -63,7 +63,7 @@ assert(food.includes("lookup.php?i="),"Food lookup is not ID-based");
 assert(food.includes("record.strMeal") && food.includes("record.strMealThumb") && food.includes("strInstructions"),"Food card is not sourced from one recipe record");
 assert(food.includes("RECIPE_CACHE_VERSION=4"),"Food cache changed unexpectedly");
 
-assert(sw.includes('moin-gym-firebase-auth-theme-v9-20260818'),"Service-worker cache was not bumped");
+assert(sw.includes('moin-gym-firebase-auth-theme-v10-20260818'),"Service-worker cache was not bumped");
 assert(sw.includes("keys.filter(key=>key!==CACHE_NAME).map(key=>caches.delete(key))"),"Old service-worker caches are not deleted");
 assert(sw.includes("requestUrl.origin!==self.location.origin"),"External API requests are still service-worker cached");
 

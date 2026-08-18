@@ -11,8 +11,11 @@ const STORAGE_KEY="moinGymV9";
 function deepCopy(value){return JSON.parse(JSON.stringify(value));}
 
 let state=JSON.parse(localStorage.getItem(STORAGE_KEY)||"null")||{
-  theme:"custom",
+  // Appearance starts with the original green design.
+  theme:"classic",
+  themePreset:"classic",
   themeColor:"#eefbf3",
+  accentPreset:"green",
   accent:"#0a6b33",
   fridayFast:true,
   gymTime:CONFIG.normalGymTime,
@@ -23,9 +26,19 @@ let state=JSON.parse(localStorage.getItem(STORAGE_KEY)||"null")||{
 };
 
 if(!state.gymTime)state.gymTime=CONFIG.normalGymTime;
-if(!state.themeColor)state.themeColor=state.theme==="dark"?"#101820":"#eefbf3";
+
+// Older saved settings are translated into the current preset model.
 const LEGACY_ACCENTS={green:"#0a6b33",blue:"#075fc7",purple:"#6844cc",orange:"#c75c00",pink:"#b92968",teal:"#087e79"};
-if(LEGACY_ACCENTS[state.accent])state.accent=LEGACY_ACCENTS[state.accent];
+if(LEGACY_ACCENTS[state.accent]){
+  state.accentPreset=state.accent;
+  state.accent=LEGACY_ACCENTS[state.accent];
+}
+if(!state.themePreset){
+  if(["light","dark","multicolor","midnight","ocean","warm","rose","classic"].includes(state.theme))state.themePreset=state.theme;
+  else state.themePreset="classic";
+}
+if(!state.themeColor)state.themeColor="#eefbf3";
+if(!state.accentPreset)state.accentPreset="green";
 if(!/^#[0-9a-f]{6}$/i.test(state.accent||""))state.accent="#0a6b33";
 if(!state.startDate)state.startDate=CONFIG.defaultJourneyStart;
 if(!state.plan)state.plan=deepCopy(DEFAULT_PLAN);
