@@ -59,11 +59,32 @@ function updateClock(){
   $("#weekday").textContent=weekdayDate.toLocaleDateString([],{weekday:"long"});
 }
 
+function hexRgb(hex){
+  const value=String(hex||"").replace("#","");
+  if(!/^[0-9a-f]{6}$/i.test(value))return{r:0,g:0,b:0};
+  return{r:parseInt(value.slice(0,2),16),g:parseInt(value.slice(2,4),16),b:parseInt(value.slice(4,6),16)};
+}
+function mixHex(a,b,weight=.5){
+  const x=hexRgb(a),y=hexRgb(b),w=Math.max(0,Math.min(1,weight));
+  const h=n=>Math.round(n).toString(16).padStart(2,"0");
+  return `#${h(x.r+(y.r-x.r)*w)}${h(x.g+(y.g-x.g)*w)}${h(x.b+(y.b-x.b)*w)}`;
+}
 function applyTheme(){
-  document.body.dataset.theme=state.theme;
-  document.body.dataset.accent=state.accent;
-  $("#themePreset").value=state.theme;
-  $("#accentColor").value=state.accent;
+  const theme=state.themeColor||"#eefbf3",accent=state.accent||"#0a6b33";
+  const rgb=hexRgb(theme),luma=(.2126*rgb.r+.7152*rgb.g+.0722*rgb.b)/255,isDark=luma<.48;
+  document.body.dataset.theme=isDark?"dark":"light";
+  document.body.style.setProperty("--accent",accent);
+  document.body.style.setProperty("--accent2",mixHex(accent,isDark?"#ffffff":"#000000",isDark?.22:.12));
+  document.body.style.setProperty("--bg",theme);
+  document.body.style.setProperty("--surface",mixHex(theme,isDark?"#ffffff":"#ffffff",isDark?.08:.55));
+  document.body.style.setProperty("--card",mixHex(theme,isDark?"#ffffff":"#ffffff",isDark?.10:.78));
+  document.body.style.setProperty("--row",mixHex(theme,isDark?"#ffffff":"#ffffff",isDark?.12:.84));
+  document.body.style.setProperty("--rowAlt",mixHex(theme,isDark?"#ffffff":"#ffffff",isDark?.16:.68));
+  document.body.style.setProperty("--text",isDark?"#f5f7fb":"#161616");
+  document.body.style.setProperty("--muted",isDark?"#b6c0cc":"#687386");
+  document.body.style.setProperty("--line",mixHex(theme,isDark?"#ffffff":"#000000",isDark?.22:.10));
+  const tc=$("#themeColor"),ac=$("#accentColor");if(tc)tc.value=theme;if(ac)ac.value=accent;
+  const meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.content=theme;
 }
 
 function navigate(pageId){
@@ -85,7 +106,7 @@ function journeyDayNumber(date){
 }
 
 function workoutStreak(targetDate){
-  let cursor=parseDate(CONFIG.streakHistoryStart);
+  let cursor=parseDate(typeof userStreakStartDate==="function"?userStreakStartDate():CONFIG.streakHistoryStart);
   const end=parseDate(targetDate),rows=[];
   while(cursor<=end){
     const date=toISO(cursor),plan=workoutForDate(date);
@@ -524,6 +545,8 @@ function bindLongPress(element,name){
 
 function renderHome(){
   const date=$("#selectedDate").value;
+  const profile=(typeof getUserProfile==="function"?getUserProfile():null)||state.userProfile||{};
+  const homeName=$("#homeUserName");if(homeName)homeName.textContent=profile.name?`Welcome, ${profile.name}`:"Welcome";
   const plan=workoutForDate(date),data=dayData(date),percent=dayCompletion(date);
 
   $("#dailyPercent").textContent=`${percent}%`;
@@ -885,8 +908,18 @@ function openJourneyReset(){
   $("#confirmJourneyReset").onclick=()=>{state.startDate=$("#newJourneyStart").value;saveState();closeModal();renderJourney();renderHome();toast("90-day journey restarted");};
 }
 
-function renderProfile(){$("#profileGymTime").textContent=formatClockTime(state.gymTime);}
-function renderSettings(){updateInstallVisibility();$("#fridayFastToggle").checked=state.fridayFast;$("#gymTimeSetting").value=state.gymTime;$("#themePreset").value=state.theme;$("#accentColor").value=state.accent;}
+function renderProfile(){
+  $("#profileGymTime").textContent=formatClockTime(state.gymTime);
+  const profile=(typeof getUserProfile==="function"?getUserProfile():null)||state.userProfile||{};
+  const latest=(state.measurements||[])[0]||{};
+  const name=profile.name||"Moin Malik";
+  const avatar=$("#profileAvatar"),nameEl=$("#profileNameDisplay"),weightEl=$("#profileStartWeight"),waistEl=$("#profileStartWaist");
+  if(avatar)avatar.textContent=(name.trim()[0]||"M").toUpperCase();
+  if(nameEl)nameEl.textContent=name;
+  if(weightEl)weightEl.textContent=`${profile.weight||latest.weight||CONFIG.bodyStart.weight} kg`;
+  if(waistEl)waistEl.textContent=`${profile.waist||latest.waist||CONFIG.bodyStart.waist} in`;
+}
+function renderSettings(){updateInstallVisibility();$("#fridayFastToggle").checked=state.fridayFast;$("#gymTimeSetting").value=state.gymTime;const tc=$("#themeColor"),ac=$("#accentColor");if(tc)tc.value=state.themeColor||"#eefbf3";if(ac)ac.value=state.accent||"#0a6b33";}
 
 
 function updateInstallVisibility(){
@@ -948,8 +981,9 @@ function wireEvents(){
   $("#addCheckin").onclick=openBodyCheckin;$("#resetJourney").onclick=openJourneyReset;
 $("#fridayFastToggle").onchange=e=>{state.fridayFast=e.target.checked;saveState();renderHome();toast(state.fridayFast?"Friday Fast Mode ON":"Friday Fast Mode OFF");};
   $("#gymTimeSetting").onchange=e=>{state.gymTime=e.target.value||CONFIG.normalGymTime;saveState();renderHome();renderProfile();toast("Gym time updated");};
-  $("#themePreset").onchange=e=>{state.theme=e.target.value;saveState();applyTheme();drawWeightChart();};
-  $("#accentColor").onchange=e=>{state.accent=e.target.value;saveState();applyTheme();drawWeightChart();};
+  $("#themeColor").oninput=e=>{state.theme="custom";state.themeColor=e.target.value;saveState();applyTheme();drawWeightChart();};
+  $("#accentColor").oninput=e=>{state.accent=e.target.value;saveState();applyTheme();drawWeightChart();};
+  $("#logoutBtn").onclick=()=>{if(typeof logoutUser==="function")logoutUser();};
 
   $("#installBtn").onclick=installApp;$("#exportBtn").onclick=exportData;
   $("#importFile").onchange=e=>{if(e.target.files[0])importData(e.target.files[0]);};
@@ -958,7 +992,8 @@ $("#fridayFastToggle").onchange=e=>{state.fridayFast=e.target.checked;saveState(
 }
 
 function startApp(){
-  applyTheme();updateInstallVisibility();document.body.classList.add("on-home");renderQuote();updateClock();setInterval(updateClock,1000);wireEvents();refreshExerciseSelect();
+  applyTheme();
+  if(typeof initOnboarding==="function")initOnboarding();updateInstallVisibility();document.body.classList.add("on-home");renderQuote();updateClock();setInterval(updateClock,1000);wireEvents();refreshExerciseSelect();
   renderHome();renderFood($("#selectedDate").value);renderProgressPage();renderExercisePage();renderJourney();renderProfile();renderSettings();
   primeExerciseRecordsInBackground().catch(()=>{});
   if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});

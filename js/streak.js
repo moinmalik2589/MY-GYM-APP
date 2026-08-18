@@ -27,8 +27,7 @@ function exerciseState(identity,date){
 }
 
 function streakHistoryStart(){
-  const saved=Object.keys(state.daily).sort();
-  return saved.length&&saved[0]<CONFIG.streakHistoryStart?saved[0]:CONFIG.streakHistoryStart;
+  return typeof userStreakStartDate==="function"?userStreakStartDate():CONFIG.streakHistoryStart;
 }
 
 function buildExerciseTimeline(identity,targetDate){

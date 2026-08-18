@@ -11,8 +11,9 @@ const STORAGE_KEY="moinGymV9";
 function deepCopy(value){return JSON.parse(JSON.stringify(value));}
 
 let state=JSON.parse(localStorage.getItem(STORAGE_KEY)||"null")||{
-  theme:"light",
-  accent:"green",
+  theme:"custom",
+  themeColor:"#eefbf3",
+  accent:"#0a6b33",
   fridayFast:true,
   gymTime:CONFIG.normalGymTime,
   startDate:CONFIG.defaultJourneyStart,
@@ -22,6 +23,10 @@ let state=JSON.parse(localStorage.getItem(STORAGE_KEY)||"null")||{
 };
 
 if(!state.gymTime)state.gymTime=CONFIG.normalGymTime;
+if(!state.themeColor)state.themeColor=state.theme==="dark"?"#101820":"#eefbf3";
+const LEGACY_ACCENTS={green:"#0a6b33",blue:"#075fc7",purple:"#6844cc",orange:"#c75c00",pink:"#b92968",teal:"#087e79"};
+if(LEGACY_ACCENTS[state.accent])state.accent=LEGACY_ACCENTS[state.accent];
+if(!/^#[0-9a-f]{6}$/i.test(state.accent||""))state.accent="#0a6b33";
 if(!state.startDate)state.startDate=CONFIG.defaultJourneyStart;
 if(!state.plan)state.plan=deepCopy(DEFAULT_PLAN);
 if(!state.daily)state.daily={};

@@ -1,147 +1,75 @@
-# MOIN MALIK GYM TRACKER
+MOIN MALIK GYM TRACKER — EXERCISE + FOOD SOURCE-OF-TRUTH FIX
 
-A 90-day fitness transformation web app I created to keep workouts, exercise demos, meals, recipes, progress, and body measurements in one place.
+SCOPE
+Only the exercise identity/demo path, food/recipe identity path, stable workout-key migration,
+and their caches/service-worker behavior were changed. Existing UI layout, navigation, themes,
+progress rings, charts, body measurements, journey, settings, and general responsive styling
+were not intentionally redesigned.
 
-The main idea behind the app is simple: instead of searching separately for workouts, exercise demonstrations, and meals every day, the app organizes the complete 90-day journey in one dashboard.
+EXERCISES
+Production identity flow:
+  stable internal workout key
+    -> pinned ExerciseDB exerciseId
+    -> exact ExerciseDB record
+    -> record.name
+    -> record.gifUrl
+    -> record.instructions
 
-## Workout & Exercise System
+Important:
+- Human-readable exercise names are no longer workout-history keys.
+- Existing daily index history is preserved and mirrored into exerciseByKey / loadsByKey.
+- Old name-based exercise caches are invalidated.
+- Exercise record cache: moinExerciseRecordCache:v5
+- Once an ExerciseDB ID is pinned, rendering is ID based.
+- First online sync only: if an older install has no pinned ID yet, the app uses an exact-name
+  bootstrap list to discover a record whose normalized API name exactly equals the requested
+  bootstrap name. There is no fuzzy score, broad substring matching, or metadata guess.
+- If no exact record is found, the popup says Demo temporarily unavailable.
+- There is no special Lat Pulldown renderer or local Lat Pulldown reference PNG.
+- Meal Prep + Weekly Review is explicitly non-exercise and never queries ExerciseDB.
 
-The workout plan uses ExerciseDB to load exercise information and demonstrations.
+FOOD
+Primary and only recipe API: TheMealDB.
 
-Each exercise in the workout plan has its own internal key and is connected to a specific ExerciseDB exercise ID.
+Production identity flow:
+  meal slot
+    -> verified TheMealDB recipe ID
+    -> exact lookup record
+    -> record.strMeal
+    -> record.strMealThumb
+    -> record.strIngredient*/strMeasure*
+    -> record.strInstructions
 
-The basic flow is:
+Important:
+- Wikipedia, Wikimedia, DummyJSON, local fake meal names, and mixed-source recipe assembly are gone.
+- Food cache: moinRecipeCache:v4, keyed by recipe ID.
+- Old moinFoodMedia* and older recipe caches are invalidated.
+- Local text is limited to fitness portion guidance; it does not rename the API recipe or replace
+  the API image/ingredients/instructions.
+- Friday fasting layout is preserved: breakfast/lunch are fasting states; Iftar/snack and dinner
+  use exact recipe IDs.
+- The rotation currently contains 13 distinct TheMealDB recipe IDs distributed across breakfast,
+  lunch, snack and dinner, with controlled weekly/day rotation across the 90-day program.
 
-**Workout Exercise → ExerciseDB ID → Exercise Details → Demo GIF → Instructions**
+PWA / SERVICE WORKER
+Service-worker cache:
+  moin-gym-source-of-truth-v6-20260817
 
-Exercise names are used for display, while workout history is stored using stable internal exercise keys. This helps keep completed exercises, weights, reps, and previous workout data connected to the correct exercise.
+Activation deletes old service-worker caches.
+External API/GIF/image requests are no longer stored in Cache Storage; exact validated API records
+are cached in localStorage by ID instead.
 
-Exercise information loaded from ExerciseDB includes:
+DEVELOPMENT VALIDATION
+While the hosted app is online, open DevTools and run:
 
-* Exercise name
-* Demo GIF
-* Target muscles
-* Body part
-* Exercise instructions
+  await primeExerciseRegistryInBackground();
+  await verifyAllWorkoutExerciseRecords();
+  await verifyMealRotationRecords();
 
-Exercise records are cached locally so the app does not need to request the same information every time.
+Static validation from the project root:
 
-Cache used:
+  node tests/source-of-truth-static-validation.mjs
 
-`moinExerciseRecordCache:v5`
-
-If an exercise demonstration cannot be loaded, the app displays:
-
-**Demo temporarily unavailable**
-
-Activities such as **Meal Prep + Weekly Review** are treated as non-exercise activities and do not make ExerciseDB requests.
-
----
-
-## Food & Recipe System
-
-The meal section uses **TheMealDB** for recipe information.
-
-Meals in the 90-day plan are connected to specific TheMealDB recipe IDs.
-
-The basic flow is:
-
-**Meal Slot → TheMealDB Recipe ID → Recipe → Image → Ingredients → Measurements → Instructions**
-
-Recipe information comes directly from the corresponding TheMealDB record, including:
-
-* Recipe name
-* Food image
-* Ingredients
-* Ingredient measurements
-* Cooking instructions
-
-I keep the fitness portion guidance separately so portions can match the transformation plan without changing the original recipe information.
-
-Recipe records are stored locally using:
-
-`moinRecipeCache:v4`
-
-The current meal rotation contains **13 different TheMealDB recipes**, distributed across breakfast, lunch, snacks, and dinner throughout the 90-day program.
-
-### Friday Plan
-
-The Friday fasting schedule is also included.
-
-Breakfast and lunch are shown as fasting periods, while Iftar/snack and dinner use their assigned recipes.
-
----
-
-## Progress Tracking
-
-The app keeps workout progress separate from the exercise names displayed on screen.
-
-This allows workout records such as:
-
-* Exercise completion
-* Weight used
-* Reps
-* Daily workout history
-* Progress
-* Streak information
-
-to remain connected to the correct workout exercise.
-
-Existing workout history can also be carried into the exercise-key based storage structure.
-
----
-
-## PWA & Offline Support
-
-The app works as a Progressive Web App (PWA) and can be installed on supported phones and computers.
-
-Current service-worker cache:
-
-`moin-gym-source-of-truth-v6-20260817`
-
-The service worker manages the main application files, while external exercise GIFs, recipe images, and API responses are handled separately.
-
-Validated ExerciseDB and TheMealDB records are stored in localStorage using their IDs.
-
----
-
-## Development & Testing
-
-When the hosted app is online, the exercise and meal records can be checked from the browser DevTools console:
-
-```javascript
-await primeExerciseRegistryInBackground();
-await verifyAllWorkoutExerciseRecords();
-await verifyMealRotationRecords();
-```
-
-Static validation can also be run from the project root:
-
-```bash
-node tests/source-of-truth-static-validation.mjs
-```
-
-Additional technical notes are available in:
-
-```text
-dev/API_SOURCE_OF_TRUTH_VERIFICATION.md
-dev/SOURCE_OF_TRUTH_FIX_REPORT.md
-```
-
----
-
-## APIs Used
-
-**ExerciseDB**
-Used for exercise records, exercise instructions, target muscles, and demonstration GIFs.
-
-**TheMealDB**
-Used for meal names, images, ingredients, measurements, and cooking instructions.
-
----
-
-## About the Project
-
-I created **Moin Malik Gym Tracker** as a personal 90-day transformation app that combines my workout routine, exercise guidance, meal planning, recipes, and progress tracking.
-
-The goal is to make following the transformation plan easier by keeping everything needed for each day in one place.
+See:
+  dev/API_SOURCE_OF_TRUTH_VERIFICATION.md
+  dev/SOURCE_OF_TRUTH_FIX_REPORT.md

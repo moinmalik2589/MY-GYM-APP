@@ -12,6 +12,70 @@
   <link rel="stylesheet" href="css/themes.css">
 </head>
 <body data-theme="light" data-accent="green">
+<div id="onboardingGate" class="onboarding-gate hidden" aria-live="polite">
+  <div class="onboarding-shell">
+    <div class="onboarding-brand">
+      <img src="assets/icon-192.png" alt="App icon">
+      <div><h1>90-Day Transformation</h1><p>Login or sign up first, then complete your starting details.</p></div>
+    </div>
+
+    <div id="authSetupWarning" class="onboard-warning hidden">
+      Firebase is not configured yet. Add your Firebase Web App configuration in <b>js/auth-config.js</b>.
+    </div>
+
+    <section data-onboard-step="auth" class="onboard-step">
+      <div class="auth-mode-tabs">
+        <button type="button" data-auth-mode="login" class="active">Login</button>
+        <button type="button" data-auth-mode="signup">Sign Up</button>
+      </div>
+      <h2 id="authHeading">Welcome back</h2>
+      <p class="onboard-muted">Use email + password or your mobile number.</p>
+      <label>Email address<input id="authEmail" type="email" autocomplete="email" placeholder="you@example.com"></label>
+      <label>Password<input id="authPassword" type="password" autocomplete="current-password" minlength="6" placeholder="Minimum 6 characters"></label>
+      <button id="emailAuthBtn" class="primary-btn full">Login</button>
+      <p class="signup-only onboard-fine hidden">New email accounts receive a Firebase verification link before the details form opens.</p>
+      <div class="onboard-divider"><span>OR</span></div>
+      <label>Mobile number<input id="authPhone" type="tel" autocomplete="tel" placeholder="+919876543210"></label>
+      <button id="sendPhoneOtpBtn" class="secondary-btn full">Continue with mobile OTP</button>
+      <div id="recaptcha-container"></div>
+    </section>
+
+    <section data-onboard-step="phone-verify" class="onboard-step hidden">
+      <h2>Verify mobile number</h2>
+      <label>OTP<input id="authOtp" inputmode="numeric" autocomplete="one-time-code" maxlength="8" placeholder="Enter OTP"></label>
+      <button id="verifyPhoneOtpBtn" class="primary-btn full">Verify & continue</button>
+      <button id="backToAuthBtn" class="link-btn">Back to Login / Sign Up</button>
+    </section>
+
+    <section data-onboard-step="email-verify" class="onboard-step hidden">
+      <h2>Verify your email</h2>
+      <p class="onboard-muted">Open the verification email sent by Firebase. After verification, return here and log in.</p>
+      <button id="backFromEmailVerifyBtn" class="primary-btn full">Back to Login</button>
+    </section>
+
+    <section data-onboard-step="profile" class="onboard-step hidden">
+      <h2>Tell us about you</h2>
+      <p class="onboard-muted">This form appears after authentication and creates your starting 90-day profile.</p>
+      <div class="onboard-grid">
+        <label class="wide">Name<input id="profileName" autocomplete="name" required></label>
+        <label>Age<input id="profileAge" type="number" min="13" max="100" inputmode="numeric" required></label>
+        <label>Height (cm)<input id="profileHeight" type="number" min="100" max="250" step="0.1" inputmode="decimal"></label>
+        <label>Weight (kg)<input id="profileWeight" type="number" min="25" max="400" step="0.1" inputmode="decimal" required></label>
+        <label>Waist/Belly (in)<input id="profileWaist" type="number" min="15" max="100" step="0.1" inputmode="decimal"></label>
+        <label>Lower belly (in)<input id="profileLower" type="number" min="15" max="100" step="0.1" inputmode="decimal"></label>
+        <label>Chest (in)<input id="profileChest" type="number" min="15" max="100" step="0.1" inputmode="decimal"></label>
+        <label>Hip (in)<input id="profileHip" type="number" min="15" max="100" step="0.1" inputmode="decimal"></label>
+        <label>Biceps (in)<input id="profileBiceps" type="number" min="5" max="40" step="0.1" inputmode="decimal"></label>
+        <label>Thigh (in)<input id="profileThigh" type="number" min="8" max="60" step="0.1" inputmode="decimal"></label>
+        <label>Calves (in)<input id="profileCalves" type="number" min="5" max="35" step="0.1" inputmode="decimal"></label>
+        <label>Forearm (in)<input id="profileForearm" type="number" min="4" max="30" step="0.1" inputmode="decimal"></label>
+        <label class="wide">Start my 90-day journey on<input id="profileStartDate" type="date" required></label>
+      </div>
+      <button id="saveProfileBtn" class="primary-btn full">Save details & open app</button>
+    </section>
+    <div id="onboardMessage" class="onboard-message"></div>
+  </div>
+</div>
 
 <header class="app-header">
   <div>
@@ -50,6 +114,7 @@
 
   <article class="main-card">
     <div class="page-title">
+      <div id="homeUserName" class="home-user-name">Welcome</div>
       <h2>Daily Gym Progress</h2>
       <p>Complete your workout, record weight and repetitions, and move on.</p>
     </div>
@@ -206,12 +271,12 @@
 <section id="profilePage" class="page">
   <article class="main-card">
     <div class="profile-card">
-      <div class="profile-avatar">M</div>
-      <div><h2>Moin Malik</h2><p>90-Day Gym Transformation</p></div>
+      <div class="profile-avatar" id="profileAvatar">M</div>
+      <div><h2 id="profileNameDisplay">Moin Malik</h2><p>90-Day Gym Transformation</p></div>
     </div>
     <div class="profile-stats">
-      <div><span>Start Weight</span><b>90.5 kg</b></div>
-      <div><span>Start Waist</span><b>46.9 in</b></div>
+      <div><span>Start Weight</span><b id="profileStartWeight">90.5 kg</b></div>
+      <div><span>Start Waist</span><b id="profileStartWaist">46.9 in</b></div>
       <div><span>Target</span><b>&lt; 70 kg</b></div>
       <div><span>Gym Time</span><b id="profileGymTime">7:45 AM</b></div>
     </div>
@@ -225,9 +290,10 @@
     <div class="settings-list">
       <label class="settings-row"><div><b>Friday Fast Mode</b><span>Friday gym shows as after Iftar.</span></div><input id="fridayFastToggle" type="checkbox"></label>
       <label class="settings-row"><div><b>Normal Gym Time</b><span>Default non-fasting gym time.</span></div><input id="gymTimeSetting" type="time"></label>
-      <label class="settings-row"><div><b>Theme</b><span>Choose a complete visual style.</span></div><select id="themePreset"><option value="light">Light</option><option value="dark">Dark</option><option value="colorful">Colorful</option><option value="multicolor">Multicolor</option></select></label>
-      <label class="settings-row"><div><b>Accent</b><span>Main app color.</span></div><select id="accentColor"><option value="green">Green</option><option value="blue">Blue</option><option value="purple">Purple</option><option value="orange">Orange</option><option value="pink">Pink</option><option value="teal">Teal</option></select></label>
+      <label class="settings-row"><div><b>Theme Color</b><span>Choose any app background color.</span></div><span class="color-ring"><input id="themeColor" type="color" value="#eefbf3" aria-label="Theme color"></span></label>
+      <label class="settings-row"><div><b>Accent Color</b><span>Choose any accent color.</span></div><span class="color-ring"><input id="accentColor" type="color" value="#0a6b33" aria-label="Accent color"></span></label>
 <div class="settings-row"><div><b>Install App</b><span>Install this tracker on your phone.</span></div><button id="installBtn" class="primary-btn">Install</button></div>
+      <div class="settings-row"><div><b>Account</b><span>Sign out of this Firebase account.</span></div><button id="logoutBtn" class="secondary-btn">Logout</button></div>
       <div class="settings-row"><div><b>Export Progress</b><span>Backup workout + body data.</span></div><button id="exportBtn" class="secondary-btn">Export</button></div>
       <label class="settings-row"><div><b>Import Progress</b><span>Restore an exported JSON file.</span></div><input id="importFile" type="file" accept=".json"></label>
     </div>
@@ -249,8 +315,13 @@
     </div>
     <div id="toast" class="toast"></div>
 
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <script src="js/config.js"></script>
+<script src="js/auth-config.js"></script>
 <script src="js/storage.js"></script>
+<script src="js/onboarding.js"></script>
 <script src="js/streak.js"></script>
 <script src="js/progress.js"></script>
 <script src="js/food.js"></script>
