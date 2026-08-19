@@ -937,3 +937,20 @@ img,svg,canvas,video{max-width:100%}
   .page,.main-card{width:100%;overflow-x:hidden}
   .table-scroll{width:100%;overflow-x:auto}
 }
+
+/* User profile, exercise catalog and flexible page height */
+body{min-height:100dvh;display:flex;flex-direction:column}main{flex:1;width:100%}.page.active{min-height:calc(100dvh - 190px)}
+.profile-avatar{overflow:hidden}.profile-avatar img{width:100%;height:100%;object-fit:cover;border-radius:inherit}.profile-stats-expanded{grid-template-columns:repeat(2,minmax(0,1fr))}
+.settings-stack{align-items:stretch!important;flex-direction:column!important}.target-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;width:100%}.target-grid label,.profile-edit-form label{display:flex;flex-direction:column;gap:5px;font-size:11px;font-weight:800}.target-grid input,.profile-edit-form input,.catalog-search{width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--row);color:var(--text)}
+.gym-schedule-editor{width:100%;display:grid;gap:6px}.gym-day-row{display:grid;grid-template-columns:auto 1fr 115px;align-items:center;gap:8px;padding:8px;border-radius:10px;background:var(--row)}.gym-day-row input[type=time]{min-width:0}
+.exercise-info-btn{user-select:none;-webkit-user-select:none;touch-action:manipulation;flex:0 0 34px}.exercise-name-zone,.workout-guide-zone{user-select:none;-webkit-user-select:none}.calorie-estimate{color:var(--accent);font-weight:800}
+.exercise-selector-row{grid-template-columns:minmax(180px,1fr) 70px 80px auto!important}.exercise-select-button{min-width:0;text-align:left;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--row);color:var(--text)}.exercise-select-button span,.exercise-select-button small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.exercise-select-button small{font-size:9px;color:var(--muted);margin-top:3px}
+.catalog-search{margin:8px 0 12px}.catalog-list{max-height:min(62vh,560px);overflow-y:auto;display:grid;gap:6px}.catalog-option{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;padding:11px;border:1px solid var(--line);border-radius:12px;background:var(--row);color:var(--text);text-align:left}.catalog-option span:first-child{min-width:0}.catalog-option b,.catalog-option small{display:block}.catalog-option small{font-size:9px;color:var(--muted);margin-top:3px}.profile-edit-form{display:grid;gap:10px}
+@media(max-width:620px){.target-grid{grid-template-columns:1fr}.exercise-selector-row{grid-template-columns:1fr 64px 72px!important}.exercise-selector-row .exercise-select-button{grid-column:1/-1}.profile-stats-expanded{grid-template-columns:1fr 1fr}}
+
+/* Gym timing and compact exercise actions */
+.exercise-num-button{border:0;font:inherit;cursor:pointer;padding:0;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+.gym-default-time-row,.gym-custom-toggle{display:grid;grid-template-columns:minmax(0,1fr) 120px;align-items:center;gap:10px;padding:10px;border-radius:12px;background:var(--row)}
+.gym-default-time-row span,.gym-custom-toggle span{min-width:0}.gym-default-time-row small,.gym-custom-toggle small{display:block;margin-top:3px;color:var(--muted);font-size:9px;font-weight:600}.gym-default-time-row input[type=time]{width:100%;min-width:0}
+.gym-custom-toggle{grid-template-columns:auto minmax(0,1fr);cursor:pointer}.gym-custom-days{display:grid;gap:6px}
+@media(max-width:520px){.exercise-top{grid-template-columns:32px minmax(0,1fr) auto!important}.exercise-streak{font-size:10px}.exercise-name-zone{min-width:0}.exercise-name-zone h3,.exercise-name-zone p{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.gym-default-time-row{grid-template-columns:minmax(0,1fr) 108px}.gym-day-row{grid-template-columns:auto minmax(0,1fr) 105px}}

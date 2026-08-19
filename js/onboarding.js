@@ -65,7 +65,7 @@ async function loadRemoteProfile(user){
   if(!data.profileComplete)return null;
   const profile={
     name:data.name||"",age:data.age||null,height:data.height||null,weight:data.weight||null,waist:data.waist||null,lower:data.lower||null,
-    chest:data.chest||null,hip:data.hip||null,biceps:data.biceps||null,thigh:data.thigh||null,calves:data.calves||null,forearm:data.forearm||null,
+    chest:data.chest||null,hip:data.hip||null,biceps:data.biceps||null,thigh:data.thigh||null,calves:data.calves||null,forearm:data.forearm||null,photoDataUrl:data.photoDataUrl||"",
     startDate:data.startDate||todayISO(),firstLoginDate:data.firstLoginDate||todayISO(),createdAt:data.createdAt?.toDate?.()?.toISOString?.()||new Date().toISOString(),uid:user.uid
   };
   saveUserProfile(profile,user.uid);return profile;
@@ -147,7 +147,10 @@ async function saveOnboardingProfile(){
   const v=Object.fromEntries(ids.map(id=>[id,document.getElementById(id)?.value?.trim()]));
   if(!v.profileName||!v.profileAge||!v.profileWeight||!v.profileStartDate)return setOnboardMessage("Name, age, weight and journey start date are required.",true);
   const remote=user?await ensureUserRecord(user):null;
-  const profile={name:v.profileName,age:+v.profileAge,height:+v.profileHeight||null,weight:+v.profileWeight,waist:+v.profileWaist||null,lower:+v.profileLower||null,chest:+v.profileChest||null,hip:+v.profileHip||null,biceps:+v.profileBiceps||null,thigh:+v.profileThigh||null,calves:+v.profileCalves||null,forearm:+v.profileForearm||null,startDate:v.profileStartDate,firstLoginDate:remote?.firstLoginDate||todayISO(),createdAt:new Date().toISOString(),uid:user?.uid||"local"};
+  const photoFile=document.getElementById("profilePhoto")?.files?.[0];
+  const existing=getUserProfile()||{};
+  const profile={name:v.profileName,age:+v.profileAge,height:+v.profileHeight||null,weight:+v.profileWeight,waist:+v.profileWaist||null,lower:+v.profileLower||null,chest:+v.profileChest||null,hip:+v.profileHip||null,biceps:+v.profileBiceps||null,thigh:+v.profileThigh||null,calves:+v.profileCalves||null,forearm:+v.profileForearm||null,photoDataUrl:existing.photoDataUrl||"",startDate:v.profileStartDate,firstLoginDate:remote?.firstLoginDate||existing.firstLoginDate||todayISO(),createdAt:existing.createdAt||new Date().toISOString(),uid:user?.uid||"local"};
+  if(photoFile)profile.photoDataUrl=await compressProfilePhoto(photoFile);
   if(user&&firebaseDbInstance){await firebaseDbInstance.collection("users").doc(user.uid).set({...profile,profileComplete:true,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});}
   saveUserProfile(profile,user?.uid||"local");applyProfileToTracker(profile);finishOnboarding();
 }
@@ -158,7 +161,6 @@ function finishOnboarding(){
 }
 async function initOnboarding(){
   const gate=document.getElementById("onboardingGate");if(!gate)return;
-  document.body.classList.add("onboarding-active");gate.classList.remove("hidden");setAuthMode("login");
   document.querySelectorAll("[data-auth-mode]").forEach(btn=>btn.onclick=()=>setAuthMode(btn.dataset.authMode));
   document.getElementById("emailAuthBtn").onclick=emailAuth;document.getElementById("sendPhoneOtpBtn").onclick=sendPhoneOtp;document.getElementById("verifyPhoneOtpBtn").onclick=verifyPhoneOtp;
   document.getElementById("backToAuthBtn").onclick=()=>{showAuthStep("auth");setOnboardMessage("");};
@@ -166,12 +168,25 @@ async function initOnboarding(){
   document.getElementById("saveProfileBtn").onclick=()=>saveOnboardingProfile().catch(e=>setOnboardMessage(e.message,true));
   const start=document.getElementById("profileStartDate");if(start&&!start.value)start.value=todayISO();
   if(!initFirebaseServices()){
-    document.getElementById("authSetupWarning")?.classList.remove("hidden");
-    setOnboardMessage("Add your Firebase Web App config in js/auth-config.js to enable Login / Signup.",true);return;
+    document.body.classList.add("onboarding-active");gate.classList.remove("hidden");setAuthMode("login");
+    document.getElementById("authSetupWarning")?.classList.remove("hidden");setOnboardMessage("Add your Firebase Web App config in js/auth-config.js to enable Login / Signup.",true);return;
   }
   firebaseAuthInstance.onAuthStateChanged(async user=>{
-    if(!user)return;
-    if(user.email&&!user.emailVerified)return;
-    try{await afterAuthenticated(user);}catch(e){setOnboardMessage(e.message,true);}
+    if(user && (!user.email||user.emailVerified)){
+      try{await afterAuthenticated(user);}catch(e){document.body.classList.add("onboarding-active");gate.classList.remove("hidden");setOnboardMessage(e.message,true);}return;
+    }
+    document.body.classList.add("onboarding-active");gate.classList.remove("hidden");setAuthMode("login");showAuthStep("auth");
   });
+}
+
+async function compressProfilePhoto(file){
+  if(!file)return "";const bitmap=await createImageBitmap(file);const max=256,scale=Math.min(1,max/Math.max(bitmap.width,bitmap.height));
+  const canvas=document.createElement("canvas");canvas.width=Math.max(1,Math.round(bitmap.width*scale));canvas.height=Math.max(1,Math.round(bitmap.height*scale));
+  canvas.getContext("2d").drawImage(bitmap,0,0,canvas.width,canvas.height);return canvas.toDataURL("image/jpeg",.72);
+}
+async function updateUserProfile(changes){
+  const user=firebaseAuthInstance?.currentUser;const current=getUserProfile()||{};const profile={...current,...changes};
+  saveUserProfile(profile,user?.uid||current.uid||"local");state.userProfile=profile;saveState();
+  if(user&&firebaseDbInstance)await firebaseDbInstance.collection("users").doc(user.uid).set({...changes,profileComplete:true,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+  return profile;
 }

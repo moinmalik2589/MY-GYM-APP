@@ -63,11 +63,11 @@ assert(food.includes("lookup.php?i="),"Food lookup is not ID-based");
 assert(food.includes("record.strMeal") && food.includes("record.strMealThumb") && food.includes("strInstructions"),"Food card is not sourced from one recipe record");
 assert(food.includes("RECIPE_CACHE_VERSION=4"),"Food cache changed unexpectedly");
 
-assert(sw.includes('moin-gym-firebase-auth-theme-v10-20260818'),"Service-worker cache was not bumped");
+assert(sw.includes('moin-gym-firebase-auth-theme-v13-20260819'),"Service-worker cache was not bumped");
 assert(sw.includes("keys.filter(key=>key!==CACHE_NAME).map(key=>caches.delete(key))"),"Old service-worker caches are not deleted");
 assert(sw.includes("requestUrl.origin!==self.location.origin"),"External API requests are still service-worker cached");
 
 if(errors.length){console.error(errors.join("\n"));process.exit(1);}
 console.log(`PASS: ${realKeys.length} unique workout exercises have fixed ExerciseDB V1 IDs.`);
 console.log("PASS: production exercise path is stable key -> configured V1 ID -> exact record; no name discovery remains.");
-console.log("PASS: existing history migration remains compatible and food architecture is unchanged.");
+console.log("PASS: existing history migration remains compatible and food recipe identity remains TheMealDB-based.");

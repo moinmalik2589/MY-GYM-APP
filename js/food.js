@@ -28,6 +28,10 @@ const RECIPE_POOLS={
   dinner:["52806","52851","53218","53039"]     // Tandoori / Nutty curry / Shawarma / Piri-piri
 };
 
+
+const RECIPE_NUTRITION_ESTIMATES={"53076":[380,20,3],"53215":[360,20,5],"52915":[310,22,1],"52795":[520,48,5],"53358":[600,45,4],"53011":[460,40,7],"53367":[520,35,4],"52852":[300,25,4],"52955":[180,12,2],"52806":[500,50,5],"52851":[550,45,5],"53218":[520,45,5],"53039":[450,48,6]};
+function nutritionEstimate(id){const n=RECIPE_NUTRITION_ESTIMATES[id];return n?`≈ ${n[0]} kcal • ${n[1]} g protein • ${n[2]} g fiber`:"Nutrition estimate unavailable";}
+
 const RECIPE_PORTION_GUIDANCE={
   "53076":"Use 1 recipe serving; avoid extra butter/oil.",
   "53215":"Use 2 eggs from the prepared dish with one small roti/flatbread if needed.",
@@ -144,20 +148,8 @@ function rotationIndexForDate(date){
 }
 
 function mealScheduleForDate(date){
-  const day=parseDate(date).getDay();
-  const rotation=rotationIndexForDate(date);
-  const friday=day===5 && state.fridayFast;
-
-  return[
-    friday
-      ? {slot:"breakfast",label:"Breakfast",fasting:true,message:"Friday fasting — no breakfast."}
-      : {slot:"breakfast",label:"Breakfast",recipeId:RECIPE_POOLS.breakfast[rotation]},
-    friday
-      ? {slot:"lunch",label:"Lunch",fasting:true,message:"Friday fasting — no lunch."}
-      : {slot:"lunch",label:"Lunch",recipeId:RECIPE_POOLS.lunch[rotation]},
-    {slot:"snack",label:friday?"Iftar / Snack":"Snack",recipeId:friday?"53076":RECIPE_POOLS.snack[rotation]},
-    {slot:"dinner",label:"Dinner",recipeId:RECIPE_POOLS.dinner[rotation]}
-  ];
+  const current=parseDate(date),rotation=rotationIndexForDate(date);
+  return[{slot:"breakfast",label:"Breakfast",recipeId:RECIPE_POOLS.breakfast[rotation]},{slot:"lunch",label:"Lunch",recipeId:RECIPE_POOLS.lunch[rotation]},{slot:"snack",label:"Snack",recipeId:RECIPE_POOLS.snack[rotation]},{slot:"dinner",label:"Dinner",recipeId:RECIPE_POOLS.dinner[rotation]}];
 }
 
 function recipeUnavailableCard(slot){
@@ -173,18 +165,6 @@ function recipeUnavailableCard(slot){
   `;
 }
 
-function fastingCard(slot){
-  return`
-    <div class="meal-card">
-      <button class="meal-summary" type="button">
-        <div class="meal-icon">🌙</div>
-        <div><h3>${escapeHTML(slot.label)}: Friday Fasting</h3><p>${escapeHTML(slot.message)}</p></div>
-        <div class="expand-symbol">＋</div>
-      </button>
-      <div class="meal-details"><p>${escapeHTML(slot.message)}</p></div>
-    </div>
-  `;
-}
 
 function recipeCard(slot,record){
   const ingredients=mealIngredients(record);
@@ -209,7 +189,7 @@ function recipeCard(slot,record){
         </div>
 
         <div class="food-choice">
-          <b>Fitness portion guidance:</b> ${escapeHTML(portion)}
+          <b>Fitness portion guidance:</b> ${escapeHTML(portion)}<br><b>Approx. nutrition for recommended portion:</b> ${escapeHTML(nutritionEstimate(record.idMeal))}
         </div>
 
         <h4>Ingredients</h4>

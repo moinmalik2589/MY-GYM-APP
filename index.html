@@ -57,7 +57,7 @@
       <h2>Tell us about you</h2>
       <p class="onboard-muted">This form appears after authentication and creates your starting 90-day profile.</p>
       <div class="onboard-grid">
-        <label class="wide">Name<input id="profileName" autocomplete="name" required></label>
+        <label class="wide">Profile photo (optional)<input id="profilePhoto" type="file" accept="image/*"></label><label class="wide">Name<input id="profileName" autocomplete="name" required></label>
         <label>Age<input id="profileAge" type="number" min="13" max="100" inputmode="numeric" required></label>
         <label>Height (cm)<input id="profileHeight" type="number" min="100" max="250" step="0.1" inputmode="decimal"></label>
         <label>Weight (kg)<input id="profileWeight" type="number" min="25" max="400" step="0.1" inputmode="decimal" required></label>
@@ -131,7 +131,7 @@
       </div>
     </div>
 
-    <div id="fastNotice" class="fast-notice hidden">🌙 Friday Fast Mode — gym is scheduled after Iftar.</div>
+    <div id="fastNotice" class="fast-notice hidden"></div>
 
     <div class="summary-grid">
       <div><span>Workout</span><b id="workoutName">Upper A</b></div>
@@ -143,10 +143,10 @@
     <div id="homeExerciseCards" class="exercise-card-list"></div>
 
     <div class="home-habits">
-      <label><input id="stepGoal" type="checkbox"> 👟 8,000+ steps</label>
-      <label><input id="waterGoal" type="checkbox"> 💧 3+ L water</label>
+      <label><input id="stepGoal" type="checkbox"> 👟 <span id="stepGoalText">8,000+ steps</span></label>
+      <label><input id="waterGoal" type="checkbox"> 💧 <span id="waterGoalText">3+ L water</span></label>
       <label><input id="proteinGoal" type="checkbox"> 🥩 Protein-focused meals</label>
-      <label><input id="sleepGoal" type="checkbox"> 😴 7+ h total sleep</label>
+      <label><input id="sleepGoal" type="checkbox"> 😴 <span id="sleepGoalText">7+ h total sleep</span></label>
     </div>
   </article>
 </section>
@@ -277,13 +277,14 @@
       <div class="profile-avatar" id="profileAvatar">M</div>
       <div><h2 id="profileNameDisplay">User</h2><p>90-Day Gym Transformation</p></div>
     </div>
-    <div class="profile-stats">
-      <div><span>Start Weight</span><b id="profileStartWeight">90.5 kg</b></div>
-      <div><span>Start Waist</span><b id="profileStartWaist">46.9 in</b></div>
-      <div><span>Target</span><b>&lt; 70 kg</b></div>
-      <div><span>Gym Time</span><b id="profileGymTime">7:45 AM</b></div>
+    <div class="profile-stats profile-stats-expanded">
+      <div><span>Start Weight</span><b id="profileStartWeight">—</b></div><div><span>Current Weight</span><b id="profileCurrentWeight">—</b></div>
+      <div><span>Start Waist</span><b id="profileStartWaist">—</b></div><div><span>Current Waist</span><b id="profileCurrentWaist">—</b></div>
+      <div><span>Start Chest</span><b id="profileStartChest">—</b></div><div><span>Current Chest</span><b id="profileCurrentChest">—</b></div>
+      <div><span>Start Lower Belly</span><b id="profileStartLower">—</b></div><div><span>Current Lower Belly</span><b id="profileCurrentLower">—</b></div>
+      <div><span>Journey Start</span><b id="profileJourneyStart">—</b></div><div><span>Gym Time</span><b id="profileGymTime">—</b></div>
     </div>
-    <button data-page="settingsPage" class="secondary-btn full">Open Settings</button>
+    <button id="editProfileBtn" class="primary-btn full">Edit Profile</button>
   </article>
 </section>
 
@@ -291,8 +292,8 @@
   <article class="main-card">
     <div class="page-title"><h2>Settings</h2></div>
     <div class="settings-list">
-      <label class="settings-row"><div><b>Friday Fast Mode</b><span>Friday gym shows as after Iftar.</span></div><input id="fridayFastToggle" type="checkbox"></label>
-      <label class="settings-row"><div><b>Normal Gym Time</b><span>Default non-fasting gym time.</span></div><input id="gymTimeSetting" type="time"></label>
+      <div class="settings-row settings-stack"><div><b>Daily Targets</b><span>Set the goals shown on Home.</span></div><div class="target-grid"><label>Steps<input id="stepsTargetSetting" type="number" min="1000" step="500"></label><label>Water (L)<input id="waterTargetSetting" type="number" min="0.5" max="10" step="0.25"></label><label>Sleep (h)<input id="sleepTargetSetting" type="number" min="3" max="14" step="0.5"></label></div></div>
+      <div class="settings-row settings-stack"><div><b>Gym Timing</b><span>Use one default time for every day, or enable custom timing for selected days.</span></div><div id="gymScheduleEditor" class="gym-schedule-editor"></div></div>
       <div class="settings-row appearance-setting">
         <div><b>Theme</b><span>Choose a ready-made theme or create your own.</span></div>
         <div class="appearance-control">

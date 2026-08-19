@@ -1,4 +1,4 @@
-const CACHE_NAME="moin-gym-firebase-auth-theme-v10-20260818";
+const CACHE_NAME="moin-gym-firebase-auth-theme-v13-20260819";
 const FILES=["./","./index.html","./css/base.css","./css/themes.css","./js/config.js","./js/auth-config.js","./js/storage.js","./js/onboarding.js","./js/streak.js","./js/progress.js","./js/food.js","./js/ui.js","./js/app.js","./manifest.json","./assets/icon-192.png","./assets/icon-512.png","./assets/apple-touch-icon.png"];
 
 self.addEventListener("install",event=>{

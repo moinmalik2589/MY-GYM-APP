@@ -17,8 +17,10 @@ let state=JSON.parse(localStorage.getItem(STORAGE_KEY)||"null")||{
   themeColor:"#eefbf3",
   accentPreset:"green",
   accent:"#0a6b33",
-  fridayFast:true,
   gymTime:CONFIG.normalGymTime,
+  gymSchedule:{},
+  customGymTiming:false,
+  targets:{steps:8000,water:3,sleep:7},
   startDate:CONFIG.defaultJourneyStart,
   plan:deepCopy(DEFAULT_PLAN),
   daily:{},
@@ -26,6 +28,10 @@ let state=JSON.parse(localStorage.getItem(STORAGE_KEY)||"null")||{
 };
 
 if(!state.gymTime)state.gymTime=CONFIG.normalGymTime;
+if(!state.gymSchedule)state.gymSchedule={};
+if(typeof state.customGymTiming!=="boolean")state.customGymTiming=Object.keys(state.gymSchedule).length>0;
+if(!state.targets)state.targets={steps:8000,water:3,sleep:7};
+state.targets.steps=Number(state.targets.steps)||8000;state.targets.water=Number(state.targets.water)||3;state.targets.sleep=Number(state.targets.sleep)||7;
 
 // Older saved settings are translated into the current preset model.
 const LEGACY_ACCENTS={green:"#0a6b33",blue:"#075fc7",purple:"#6844cc",orange:"#c75c00",pink:"#b92968",teal:"#087e79"};

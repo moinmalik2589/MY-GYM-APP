@@ -297,6 +297,9 @@ const EXERCISE_API_BASE="https://oss.exercisedb.dev/api/v1/exercises";
 function configuredExerciseDbId(exerciseOrKey){
   if(exerciseOrKey && typeof exerciseOrKey==="object" && exerciseOrKey.exerciseDbId)return String(exerciseOrKey.exerciseDbId);
   const key=typeof exerciseOrKey==="string"?exerciseOrKey:exerciseOrKey?.key;
+  if(!key)return null;
+  const planExercise=Object.values(state.plan||{}).flatMap(day=>day.exercises||[]).find(ex=>ex.key===key);
+  if(planExercise?.exerciseDbId)return String(planExercise.exerciseDbId);
   return VERIFIED_EXERCISE_DB_IDS[key]||null;
 }
 
@@ -405,7 +408,8 @@ async function resolveExerciseRecord(exerciseOrKey){
 }
 
 function cachedExerciseRecordForKey(trackingKey){
-  const id=configuredExerciseDbId(trackingKey);
+  const item=(Object.values(state.plan||{}).flatMap(day=>day.exercises||[]).find(ex=>ex.key===trackingKey));
+  const id=configuredExerciseDbId(item||trackingKey);
   if(!id)return null;
   const record=getExerciseRecordCache().recordsById[id];
   return isUsableExerciseDbRecord(record) && String(record.exerciseId)===String(id)
@@ -415,7 +419,8 @@ function cachedExerciseRecordForKey(trackingKey){
 
 function exerciseDisplayNameSync(exerciseOrKey){
   const key=typeof exerciseOrKey==="string"?exerciseOrKey:exerciseOrKey?.key;
-  const record=cachedExerciseRecordForKey(key);
+  const id=configuredExerciseDbId(exerciseOrKey);
+  const record=id?getExerciseRecordCache().recordsById[id]:cachedExerciseRecordForKey(key);
   if(record?.name)return record.name;
   if(EXERCISE_FALLBACK_NAMES[key])return EXERCISE_FALLBACK_NAMES[key];
   if(exerciseOrKey?.name)return exerciseOrKey.name;
@@ -525,8 +530,9 @@ async function verifyAllWorkoutExerciseRecords(){
 }
 window.verifyAllWorkoutExerciseRecords=verifyAllWorkoutExerciseRecords;
 
-function openExerciseGuide(trackingKey){
-  const fallback=EXERCISE_FALLBACK_NAMES[trackingKey]||"Exercise";
+function openExerciseGuide(exerciseOrKey){
+  const trackingKey=typeof exerciseOrKey==="string"?exerciseOrKey:exerciseOrKey?.key;
+  const fallback=exerciseDisplayNameSync(exerciseOrKey)||EXERCISE_FALLBACK_NAMES[trackingKey]||"Exercise";
   openModal(`
     <div class="exercise-guide-modal">
       <div class="picker-head">
@@ -559,7 +565,7 @@ function openExerciseGuide(trackingKey){
   });
 
   (async()=>{
-    const resolution=await resolveExerciseRecord(trackingKey);
+    const resolution=await resolveExerciseRecord(exerciseOrKey);
     renderExerciseRecordMedia($("#exerciseMediaSlot"),$("#exerciseMediaStatus"),resolution);
     const copy=$(".guide-copy");
     if(!copy)return;
@@ -608,9 +614,10 @@ function renderHome(){
   updateRing($("#dailyRing"),percent);
   $("#workoutName").textContent=plan.name;
 
-  const fasting=state.fridayFast&&parseDate(date).getDay()===5;
-  $("#gymTimeDisplay").textContent=fasting?"After Iftar":formatClockTime(state.gymTime);
-  $("#fastNotice").classList.toggle("hidden",!fasting);
+  const weekday=parseDate(date).getDay();
+  const customTime=state.customGymTiming?state.gymSchedule?.[weekday]:null;
+  $("#gymTimeDisplay").textContent=formatClockTime(customTime||state.gymTime);
+  $("#fastNotice").classList.add("hidden");
 
   const j=journeyDayNumber(date);
   $("#dayNumber").textContent=j<1?"Before Start":j>90?"Complete":`${j} / 90`;
@@ -620,8 +627,8 @@ function renderHome(){
     const load=exerciseLoadValue(date,exercise.key,index),streak=getStreakInfo(exercise.key,date).current;
     return`<div class="exercise-card">
       <div class="exercise-top">
-        <div class="exercise-num">${index+1}</div>
-        <div class="exercise-name-zone" data-guide-key="${escapeHTML(exercise.key)}"><h3 data-exercise-title-key="${escapeHTML(exercise.key)}">${escapeHTML(exerciseDisplayNameSync(exercise))}</h3><p>${escapeHTML(exercise.sets)} sets • ${escapeHTML(exercise.reps)} reps</p><div class="longpress-hint">Hold name for exercise guide</div></div>
+        <button class="exercise-num exercise-num-button" data-home-info="${index}" aria-label="Open ${escapeHTML(exerciseDisplayNameSync(exercise))} demo">${index+1}</button>
+        <div class="exercise-name-zone"><h3>${escapeHTML(exerciseDisplayNameSync(exercise))}</h3><p>${escapeHTML(exercise.sets)} sets • ${escapeHTML(exercise.reps)} reps <span class="calorie-estimate">• ${escapeHTML(exerciseCaloriesText(exercise))}</span></p></div>
         <div class="exercise-streak">${formatStreakHtml(streak)}</div>
       </div>
 
@@ -667,7 +674,7 @@ function renderHome(){
     });
   });
 
-  $$("[data-guide-key]").forEach(el=>bindLongPress(el,el.dataset.guideKey));
+
 
   $$("[data-exercise-check]").forEach(input=>input.onchange=()=>{
     const index=Number(input.dataset.exerciseCheck);
@@ -679,10 +686,15 @@ function renderHome(){
     renderHome();
   });
 
+  $$("[data-home-info]").forEach(btn=>btn.onclick=()=>openExerciseGuide(plan.exercises[Number(btn.dataset.homeInfo)]));
+
   hydrateExerciseTitles($("#homeExerciseCards"));
 
-  [["stepGoal","steps","8,000+ steps"],["waterGoal","water","Water goal"],["proteinGoal","protein","Protein-focused meals"],["sleepGoal","sleep","Sleep goal"]]
-  .forEach(([id,key,label])=>{
+  const stepText=$("#stepGoalText"),waterText=$("#waterGoalText"),sleepText=$("#sleepGoalText");
+  if(stepText)stepText.textContent=`${Number(state.targets?.steps||8000).toLocaleString()}+ steps`;
+  if(waterText)waterText.textContent=`${state.targets?.water||3}+ L water`;
+  if(sleepText)sleepText.textContent=`${state.targets?.sleep||7}+ h total sleep`;
+  [["stepGoal","steps",`${Number(state.targets?.steps||8000).toLocaleString()}+ steps`],["waterGoal","water",`${state.targets?.water||3}+ L water`],["proteinGoal","protein","Protein-focused meals"],["sleepGoal","sleep",`${state.targets?.sleep||7}+ h total sleep`]].forEach(([id,key,label])=>{
     const input=$("#"+id);
     input.checked=!!data.habits[key];
     input.onchange=()=>{
@@ -705,7 +717,7 @@ function renderWorkoutView(){
           <div class="exercise-num">${i+1}</div>
           <div class="workout-guide-zone" data-workout-guide="${escapeHTML(ex.key)}">
             <h4 data-exercise-title-key="${escapeHTML(ex.key)}">${escapeHTML(exerciseDisplayNameSync(ex))}</h4>
-            <p>${escapeHTML(ex.sets)} sets • ${escapeHTML(ex.reps)} reps</p>
+            <p>${escapeHTML(ex.sets)} sets • ${escapeHTML(ex.reps)} reps • <span class="calorie-estimate">${escapeHTML(exerciseCaloriesText(ex))}</span></p>
           </div>
           <button class="exercise-info-btn" data-info-exercise="${escapeHTML(ex.key)}">i</button>
         </div>`).join("")}
@@ -715,7 +727,7 @@ function renderWorkoutView(){
 
   hydrateExerciseTitles($("#workoutView"));
   $$("[data-info-exercise]").forEach(btn=>btn.onclick=()=>openExerciseGuide(btn.dataset.infoExercise));
-  $$("[data-workout-guide]").forEach(el=>bindLongPress(el,el.dataset.workoutGuide));
+
 }
 
 function setPlanEditMode(enabled){
@@ -728,31 +740,35 @@ function setPlanEditMode(enabled){
   playSound("tap");
 }
 
+async function loadExerciseCatalog(){
+  if(window.__exerciseCatalog?.length)return window.__exerciseCatalog;
+  const cached=Object.values(getExerciseRecordCache().recordsById||{}).filter(isUsableExerciseDbRecord);let rows=[...cached],seen=new Set(rows.map(x=>String(x.exerciseId))),after="";
+  for(let page=0;page<20;page++){
+    const url=`${EXERCISE_API_BASE}?limit=100${after?`&after=${encodeURIComponent(after)}`:""}`;
+    const response=await fetchJsonWithTimeout(url,12000);if(!response.ok)break;
+    const batch=extractExerciseRows(response.data);for(const record of batch){const n=normalizeExerciseDbRecord(record);if(isUsableExerciseDbRecord(n)&&!seen.has(String(n.exerciseId))){seen.add(String(n.exerciseId));rows.push(n);}}
+    const meta=response.data?.meta||{};if(!meta.hasNextPage||!meta.nextCursor)break;after=meta.nextCursor;
+  }
+  rows.sort((a,b)=>String(a.name).localeCompare(String(b.name)));window.__exerciseCatalog=rows;return rows;
+}
+function exerciseCaloriesText(exercise){
+  const name=exerciseDisplayNameSync(exercise).toLowerCase(),weight=Number((getUserProfile?.()||{}).weight||state.measurements?.[0]?.weight||75);let met=4.5;
+  if(/walk|treadmill/.test(name))met=4.3;else if(/run|mountain|burpee|jump/.test(name))met=7;else if(/stretch|mobility/.test(name))met=2.5;else if(/squat|deadlift|lunge|press|row|pull|curl|extension|raise/.test(name))met=5;
+  const kcal=Math.max(1,Math.round(met*3.5*weight/200*10));return `≈ ${kcal} kcal / 10 min`;
+}
+async function openExerciseCatalogPicker(dayIndex,index){
+  const modal=$("#modal"),overlay=$("#modalBg");overlay.classList.remove("hidden");modal.innerHTML=`<div class="picker-head"><div><h3>Select Exercise</h3><p class="center-muted">Loading ExerciseDB catalog…</p></div><button class="picker-close" id="catalogClose">×</button></div><input id="catalogSearch" class="catalog-search" placeholder="Search exercises" autocomplete="off"><div id="catalogList" class="catalog-list"></div>`;
+  $("#catalogClose").onclick=closeModal;const rows=await loadExerciseCatalog();const list=$("#catalogList"),search=$("#catalogSearch");
+  const paint=()=>{const q=search.value.trim().toLowerCase(),filtered=rows.filter(r=>!q||`${r.name} ${(r.equipments||[]).join(" ")} ${(r.targetMuscles||[]).join(" ")}`.toLowerCase().includes(q)).slice(0,250);list.innerHTML=filtered.map(r=>`<button class="catalog-option" data-catalog-id="${escapeHTML(r.exerciseId)}"><span><b>${escapeHTML(r.name)}</b><small>${escapeHTML((r.equipments||[]).join(", ")||"Bodyweight")} • ${escapeHTML((r.targetMuscles||[]).join(", ")||"General")}</small></span><span>›</span></button>`).join("");$$("[data-catalog-id]").forEach(btn=>btn.onclick=()=>{const record=rows.find(r=>String(r.exerciseId)===btn.dataset.catalogId);if(!record)return;const ex={key:`api-${record.exerciseId}`,slotKey:`day-${dayIndex}-exercise-${Number(index)+1}`,exerciseDbId:String(record.exerciseId),name:record.name,sets:"3",reps:"10"};const cache=getExerciseRecordCache();cache.recordsById[record.exerciseId]=record;saveExerciseRecordCache(cache);if(index==="new")state.plan[dayIndex].exercises.push(ex);else state.plan[dayIndex].exercises[Number(index)]={...state.plan[dayIndex].exercises[Number(index)],key:ex.key,exerciseDbId:ex.exerciseDbId,name:ex.name};saveState();closeModal();renderPlanEditor();refreshExerciseSelect();});};search.oninput=paint;paint();
+}
 function renderPlanEditor(){
   const names=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
-  $("#planEditor").innerHTML=[1,2,3,4,5,6,0].map(dayIndex=>{
-    const plan=state.plan[dayIndex];
-    return`<div class="day-editor">
-      <div class="day-editor-head"><h3>${names[dayIndex]}</h3><input data-day-name="${dayIndex}" value="${escapeHTML(plan.name)}"><button data-add-exercise="${dayIndex}" class="add-btn">+ Add exercise</button></div>
-      ${plan.exercises.map((ex,index)=>`<div class="editor-row">
-        <input data-plan-field="${dayIndex}|${index}|name" value="${escapeHTML(ex.name)}">
-        <input data-plan-field="${dayIndex}|${index}|sets" value="${escapeHTML(ex.sets)}">
-        <input data-plan-field="${dayIndex}|${index}|reps" value="${escapeHTML(ex.reps)}">
-        <button data-remove-exercise="${dayIndex}|${index}" class="delete-btn">Remove</button>
-      </div>`).join("")}
-    </div>`;
-  }).join("");
-
-  $$("[data-day-name]").forEach(i=>i.onchange=()=>{state.plan[i.dataset.dayName].name=i.value;saveState();});
-  $$("[data-plan-field]").forEach(i=>i.onchange=()=>{const[d,n,f]=i.dataset.planField.split("|");state.plan[d].exercises[Number(n)][f]=i.value;saveState();refreshExerciseSelect();});
-  $$('[data-add-exercise]').forEach(b=>b.onclick=()=>{
-    const dayIndex=b.dataset.addExercise;
-    const index=state.plan[dayIndex].exercises.length;
-    const key=`custom-${dayIndex}-${Date.now()}-${index+1}`;
-    state.plan[dayIndex].exercises.push({key,slotKey:`day-${dayIndex}-exercise-${index+1}`,name:"New Exercise",sets:"3",reps:"10"});
-    saveState();renderPlanEditor();refreshExerciseSelect();
-  });
-  $$("[data-remove-exercise]").forEach(b=>b.onclick=()=>{const[d,n]=b.dataset.removeExercise.split("|");state.plan[d].exercises.splice(Number(n),1);saveState();renderPlanEditor();refreshExerciseSelect();});
+  $("#planEditor").innerHTML=[1,2,3,4,5,6,0].map(dayIndex=>{const plan=state.plan[dayIndex];return`<div class="day-editor"><div class="day-editor-head"><h3>${names[dayIndex]}</h3><input data-day-name="${dayIndex}" value="${escapeHTML(plan.name)}"><button data-add-exercise="${dayIndex}" class="add-btn">+ Add exercise</button></div>${plan.exercises.map((ex,index)=>`<div class="editor-row exercise-selector-row"><button class="exercise-select-button" data-select-exercise="${dayIndex}|${index}"><span>${escapeHTML(exerciseDisplayNameSync(ex))}</span><small>Choose from ExerciseDB</small></button><input data-plan-field="${dayIndex}|${index}|sets" value="${escapeHTML(ex.sets)}" aria-label="Sets"><input data-plan-field="${dayIndex}|${index}|reps" value="${escapeHTML(ex.reps)}" aria-label="Reps"><button data-remove-exercise="${dayIndex}|${index}" class="delete-btn">Remove</button></div>`).join("")}</div>`;}).join("");
+  $$('[data-day-name]').forEach(i=>i.onchange=()=>{state.plan[i.dataset.dayName].name=i.value;saveState();});
+  $$('[data-plan-field]').forEach(i=>i.onchange=()=>{const[d,n,f]=i.dataset.planField.split("|");state.plan[d].exercises[Number(n)][f]=i.value;saveState();});
+  $$('[data-select-exercise]').forEach(b=>b.onclick=()=>{const[d,n]=b.dataset.selectExercise.split("|");openExerciseCatalogPicker(d,n);});
+  $$('[data-add-exercise]').forEach(b=>b.onclick=()=>openExerciseCatalogPicker(b.dataset.addExercise,"new"));
+  $$('[data-remove-exercise]').forEach(b=>b.onclick=()=>{const[d,n]=b.dataset.removeExercise.split("|");state.plan[d].exercises.splice(Number(n),1);saveState();renderPlanEditor();refreshExerciseSelect();});
 }
 
 function renderMonthlyProgress(){
@@ -964,21 +980,14 @@ function openJourneyReset(){
 }
 
 function renderProfile(){
-  $("#profileGymTime").textContent=formatClockTime(state.gymTime);
-  const profile=(typeof getUserProfile==="function"?getUserProfile():null)||state.userProfile||{};
-  const latest=(state.measurements||[])[0]||{};
-  const name=profile.name||"User";
-  const avatar=$("#profileAvatar"),nameEl=$("#profileNameDisplay"),weightEl=$("#profileStartWeight"),waistEl=$("#profileStartWaist");
-  if(avatar)avatar.textContent=(name.trim()[0]||"M").toUpperCase();
-  if(nameEl)nameEl.textContent=name;
-  if(weightEl)weightEl.textContent=`${profile.weight||latest.weight||CONFIG.bodyStart.weight} kg`;
-  if(waistEl)waistEl.textContent=`${profile.waist||latest.waist||CONFIG.bodyStart.waist} in`;
+  const profile=(typeof getUserProfile==="function"?getUserProfile():null)||state.userProfile||{},latest=[...(state.measurements||[])].sort((a,b)=>b.date.localeCompare(a.date))[0]||{},start=[...(state.measurements||[])].sort((a,b)=>a.date.localeCompare(b.date))[0]||{};
+  const name=profile.name||"User",avatar=$("#profileAvatar");$("#profileNameDisplay").textContent=name;
+  if(avatar){avatar.innerHTML=profile.photoDataUrl?`<img src="${profile.photoDataUrl}" alt="${escapeHTML(name)}">`:escapeHTML(name.slice(0,1).toUpperCase());}
+  const set=(id,v)=>{const el=$(id);if(el)el.textContent=v};set("#profileStartWeight",`${start.weight||profile.weight||"—"} kg`);set("#profileCurrentWeight",`${latest.weight||profile.weight||"—"} kg`);set("#profileStartWaist",`${start.waist||profile.waist||"—"} in`);set("#profileCurrentWaist",`${latest.waist||profile.waist||"—"} in`);set("#profileStartChest",`${start.chest||profile.chest||"—"} in`);set("#profileCurrentChest",`${latest.chest||profile.chest||"—"} in`);set("#profileStartLower",`${start.lower||profile.lower||"—"} in`);set("#profileCurrentLower",`${latest.lower||profile.lower||"—"} in`);set("#profileJourneyStart",profile.startDate||state.startDate||"—");set("#profileGymTime",formatClockTime(state.gymTime));
 }
 function renderSettings(){
   updateInstallVisibility();
-  $("#fridayFastToggle").checked=state.fridayFast;
-  $("#gymTimeSetting").value=state.gymTime;
-  applyTheme();
+    applyTheme();
 }
 
 
@@ -1017,6 +1026,57 @@ function importData(file){
   reader.readAsText(file);
 }
 
+
+function openEditProfile(){
+  const p=getUserProfile()||{},overlay=$("#modalBg"),modal=$("#modal");overlay.classList.remove("hidden");
+  modal.innerHTML=`<div class="picker-head"><h3>Edit Profile</h3><button class="picker-close" id="editProfileClose">×</button></div><div class="profile-edit-form"><label>Profile photo (optional)<input id="editProfilePhoto" type="file" accept="image/*"></label><label>Name<input id="editProfileName" value="${escapeHTML(p.name||"")}"></label><div class="target-grid"><label>Age<input id="editProfileAge" type="number" value="${p.age||""}"></label><label>Height (cm)<input id="editProfileHeight" type="number" step="0.1" value="${p.height||""}"></label></div><h4>Starting measurements</h4><div class="target-grid"><label>Weight (kg)<input id="editStartWeight" type="number" step="0.1" value="${p.weight||""}"></label><label>Waist (in)<input id="editStartWaist" type="number" step="0.1" value="${p.waist||""}"></label><label>Lower belly (in)<input id="editStartLower" type="number" step="0.1" value="${p.lower||""}"></label><label>Chest (in)<input id="editStartChest" type="number" step="0.1" value="${p.chest||""}"></label><label>Hip (in)<input id="editStartHip" type="number" step="0.1" value="${p.hip||""}"></label><label>Biceps (in)<input id="editStartBiceps" type="number" step="0.1" value="${p.biceps||""}"></label><label>Thigh (in)<input id="editStartThigh" type="number" step="0.1" value="${p.thigh||""}"></label><label>Calves (in)<input id="editStartCalves" type="number" step="0.1" value="${p.calves||""}"></label><label>Forearm (in)<input id="editStartForearm" type="number" step="0.1" value="${p.forearm||""}"></label></div><p class="center-muted">Current measurements come from your latest Body Check-in.</p><button id="saveProfileEdit" class="primary-btn full">Save Profile</button></div>`;
+  $("#editProfileClose").onclick=closeModal;$("#saveProfileEdit").onclick=async()=>{const num=id=>Number($(id).value)||null;const changes={name:$("#editProfileName").value.trim()||p.name,age:num("#editProfileAge")||p.age,height:num("#editProfileHeight")||p.height,weight:num("#editStartWeight"),waist:num("#editStartWaist"),lower:num("#editStartLower"),chest:num("#editStartChest"),hip:num("#editStartHip"),biceps:num("#editStartBiceps"),thigh:num("#editStartThigh"),calves:num("#editStartCalves"),forearm:num("#editStartForearm")};const file=$("#editProfilePhoto").files[0];if(file)changes.photoDataUrl=await compressProfilePhoto(file);const profile=await updateUserProfile(changes);const first=[...(state.measurements||[])].sort((a,b)=>a.date.localeCompare(b.date))[0];if(first){Object.assign(first,{weight:profile.weight,waist:profile.waist,lower:profile.lower,chest:profile.chest,hip:profile.hip,biceps:profile.biceps,thigh:profile.thigh,calves:profile.calves,forearm:profile.forearm});saveState();}closeModal();renderProfile();renderHome();renderProgressPage();toast("Profile updated");};
+}
+function renderGymScheduleEditor(){
+  const host=$("#gymScheduleEditor");
+  if(!host)return;
+  const names=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  host.innerHTML=`
+    <label class="gym-default-time-row">
+      <span><b>Default gym time</b><small>Used for every day unless a custom time is selected.</small></span>
+      <input id="defaultGymTimeSetting" type="time" value="${escapeHTML(state.gymTime)}">
+    </label>
+    <label class="gym-custom-toggle">
+      <input id="customGymTimingToggle" type="checkbox" ${state.customGymTiming?"checked":""}>
+      <span><b>Custom gym timing</b><small>Choose only the days that use a different time.</small></span>
+    </label>
+    <div id="customGymTimingDays" class="gym-custom-days ${state.customGymTiming?"":"hidden"}">
+      ${names.map((name,i)=>`<label class="gym-day-row"><input type="checkbox" data-gym-day="${i}" ${state.gymSchedule?.[i]?"checked":""}><span>${name}</span><input type="time" data-gym-time="${i}" value="${state.gymSchedule?.[i]||state.gymTime}" ${state.gymSchedule?.[i]?"":"disabled"}></label>`).join("")}
+    </div>`;
+
+  $("#defaultGymTimeSetting").onchange=e=>{
+    state.gymTime=e.target.value||CONFIG.normalGymTime;
+    saveState();
+    renderHome();
+  };
+  $("#customGymTimingToggle").onchange=e=>{
+    state.customGymTiming=e.target.checked;
+    saveState();
+    $("#customGymTimingDays").classList.toggle("hidden",!state.customGymTiming);
+    renderHome();
+  };
+  $$('[data-gym-day]').forEach(box=>box.onchange=()=>{
+    const i=box.dataset.gymDay,time=$(`[data-gym-time="${i}"]`);
+    time.disabled=!box.checked;
+    if(box.checked)state.gymSchedule[i]=time.value||state.gymTime;
+    else delete state.gymSchedule[i];
+    saveState();
+    renderHome();
+  });
+  $$('[data-gym-time]').forEach(input=>input.onchange=()=>{
+    if(state.gymSchedule?.[input.dataset.gymTime]){
+      state.gymSchedule[input.dataset.gymTime]=input.value;
+      saveState();
+      renderHome();
+    }
+  });
+}
+
 function wireEvents(){
   $("#selectedDate").value=todayISO();$("#monthPicker").value=todayISO().slice(0,7);
   $("#selectedDate").onchange=()=>{renderHome();renderFood($("#selectedDate").value);};
@@ -1039,8 +1099,6 @@ function wireEvents(){
   $("#exerciseRing").onclick=()=>{exerciseUpToTodayMode=!exerciseUpToTodayMode;playSound("tap");renderExerciseProgress();};
 
   $("#addCheckin").onclick=openBodyCheckin;$("#resetJourney").onclick=openJourneyReset;
-$("#fridayFastToggle").onchange=e=>{state.fridayFast=e.target.checked;saveState();renderHome();toast(state.fridayFast?"Friday Fast Mode ON":"Friday Fast Mode OFF");};
-  $("#gymTimeSetting").onchange=e=>{state.gymTime=e.target.value||CONFIG.normalGymTime;saveState();renderHome();renderProfile();toast("Gym time updated");};
   // Appearance controls save the user's preset or free-form color choice immediately.
   $("#themePreset").onchange=e=>{state.themePreset=e.target.value;saveState();applyTheme();drawWeightChart();};
   $("#accentPreset").onchange=e=>{state.accentPreset=e.target.value;saveState();applyTheme();drawWeightChart();};
@@ -1052,6 +1110,9 @@ $("#fridayFastToggle").onchange=e=>{state.fridayFast=e.target.checked;saveState(
     saveState();applyTheme();drawWeightChart();
   };
   $("#logoutBtn").onclick=()=>{if(typeof logoutUser==="function")logoutUser();};
+  $("#editProfileBtn").onclick=openEditProfile;
+  [["stepsTargetSetting","steps"],["waterTargetSetting","water"],["sleepTargetSetting","sleep"]].forEach(([id,key])=>{const input=$("#"+id);input.value=state.targets[key];input.onchange=()=>{state.targets[key]=Number(input.value)||state.targets[key];saveState();renderHome();};});
+  renderGymScheduleEditor();
 
   $("#installBtn").onclick=installApp;$("#exportBtn").onclick=exportData;
   $("#importFile").onchange=e=>{if(e.target.files[0])importData(e.target.files[0]);};
